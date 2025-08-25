@@ -40,10 +40,6 @@ add_executable(BattMITM_2.0 main.c )
 pico_set_program_name(BattMITM_2.0 "BattMITM_2.0")
 pico_set_program_version(BattMITM_2.0 "0.1")
 
-# Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(BattMITM_2.0 0)
-pico_enable_stdio_usb(BattMITM_2.0 0)
-
 # Add the standard library to the build
 target_link_libraries(BattMITM_2.0
         pico_stdlib)
@@ -55,3 +51,5 @@ target_include_directories(BattMITM_2.0 PRIVATE
 
 pico_add_extra_outputs(BattMITM_2.0)
 
+# enable USB serial
+pico_enable_stdio_usb(BattMITM_2.0 1)

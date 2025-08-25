@@ -2,8 +2,7 @@
 #include "pico/stdlib.h"
 
 
-int main()
-{
+int main() {
     stdio_init_all();
 
     while (true) {
