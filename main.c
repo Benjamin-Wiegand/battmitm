@@ -29,18 +29,7 @@
 #include "pico/stdlib.h"
 
 
-int main() {
-    stdio_init_all();
-
-    sleep_ms(2000);
-
-    printf("\n\n\n======= init =======\n\n\n");
-
-    i2c_dev_t* bms = get_bms_dev();
-    i2c_dev_t* laptop = get_laptop_dev();
-    
-    init_status();
-
+void init_i2c() {
     // init batt i2c
     gpio_set_function(BATT_I2C_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(BATT_I2C_SCL_PIN, GPIO_FUNC_I2C);
@@ -60,12 +49,22 @@ int main() {
     }
 
     i2c_set_slave_mode(LAPTOP_I2C, true, LAPTOP_I2C_ADDR);
+}
 
+
+int main() {
+    stdio_init_all();
+
+    sleep_ms(2000);
+
+    printf("\n\n\n======= init =======\n\n\n");
+
+    i2c_dev_t* bms = get_bms_dev();
+    i2c_dev_t* laptop = get_laptop_dev();
+    
+    init_status();
+    init_i2c();
     mitm_init();
-
-    int len;
-    uint16_t voltage, serial, mf_acc;
-    char vendor[32];
 
     while (true) {
         mitm_loop();
