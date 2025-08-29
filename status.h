@@ -21,6 +21,9 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
+#include <stdbool.h>
 
+// blinking leds always make things look cooler than they are
 void init_status();
-void status_led(int state);
+
+void status_mitm(bool activity);

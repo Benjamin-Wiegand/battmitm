@@ -83,7 +83,7 @@ void mitm_loop() {
     smbus_transfer_t* transfer = static_queue_peek(mitm_transfer_queue);
     if (transfer == NULL) return;
 
-    status_led(1);
+    status_mitm(true);
 
     while (transfer != NULL) {
 
@@ -170,7 +170,7 @@ void mitm_loop() {
         transfer = static_queue_peek(mitm_transfer_queue);
     } 
 
-    status_led(0);
+    status_mitm(false);
 
 }
 

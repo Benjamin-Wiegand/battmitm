@@ -24,13 +24,37 @@
 #include "status.h"
 #include "config.h"
 #include "hardware/gpio.h"
+#include "hardware/pwm.h"
+
+
+#define STATUS_ITEMS 1
+#define STATUS_ITEM_MITM_INDEX 0
+
+
+bool status_item_states[STATUS_ITEMS];
+
 
 void init_status() {
-    gpio_init(STATUS_LED_PIN);
-    gpio_set_dir(STATUS_LED_PIN, GPIO_OUT);
+    pwm_config config = pwm_get_default_config();
+
+    gpio_set_function(STATUS_LED_PIN, GPIO_FUNC_PWM);
+    uint slice_num = pwm_gpio_to_slice_num(STATUS_LED_PIN);
+    pwm_init(slice_num, &config, true);
 }
 
-// blinking leds always make things look cooler than they are
-void status_led(int state) {
-    gpio_put(STATUS_LED_PIN, state);
+void status_led_update() {
+    uint16_t brightness = 0;
+    uint16_t brightness_steps = STATUS_LED_MAX_BRIGHTNESS / STATUS_ITEMS;
+
+    for (int i = 0; i < STATUS_ITEMS; i++) {
+        brightness += brightness_steps * status_item_states[i];
+    }
+
+    pwm_set_gpio_level(STATUS_LED_PIN, brightness);
+}
+
+
+void status_mitm(bool activity) {
+    status_item_states[STATUS_ITEM_MITM_INDEX] = activity;
+    status_led_update();
 }

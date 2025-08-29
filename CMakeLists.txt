@@ -45,6 +45,7 @@ target_link_libraries(BattMITM_2.0
         pico_stdlib
         hardware_i2c
         pico_i2c_slave
+        hardware_pwm
 )
 
 # Add the standard include files to the build

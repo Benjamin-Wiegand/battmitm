@@ -44,3 +44,4 @@
 #define LAPTOP_I2C_BAUD BATT_I2C_BAUD   // use the same baud (for now)
 
 
+#define STATUS_LED_MAX_BRIGHTNESS 10000 // 0-65535
