@@ -22,7 +22,24 @@
     IN THE SOFTWARE.
  */
 #include "smbus.h"
+#include "config.h"
 #include <stdio.h>
+
+
+struct i2c_dev;
+
+
+i2c_dev_t _i2c_bms_dev = {BATT_I2C, BATT_I2C_ADDR};
+i2c_dev_t _i2c_laptop_dev = {LAPTOP_I2C, LAPTOP_I2C_ADDR};
+
+
+i2c_dev_t* get_bms_dev() {
+    return &_i2c_bms_dev;
+}
+
+i2c_dev_t* get_laptop_dev() {
+    return &_i2c_laptop_dev;
+}
 
 
 // CRC-8
@@ -202,3 +219,4 @@ int smbus_read_text(i2c_dev_t* device, uint8_t cmd, char* result, size_t max_len
 
     return ret;
 }
+

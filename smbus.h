@@ -21,7 +21,9 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
- #include "hardware/i2c.h"
+#include <stdint.h>
+#include <stddef.h>
+#include "hardware/i2c.h"
 
 #define SMBUS_ERROR_DEVICE -1
 #define SMBUS_ERROR_GENERIC -2
@@ -34,6 +36,11 @@ struct i2c_dev {
 };
 
 typedef struct i2c_dev i2c_dev_t;
+
+i2c_dev_t* get_bms_dev();
+i2c_dev_t* get_laptop_dev();
+
+void i2c_stop_blocking(i2c_dev_t* device);
 
 int smbus_read(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t length);
 int smbus_read_block(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t max_length);

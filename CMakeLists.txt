@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(BattMITM_2.0 main.c smbus.c )
+add_executable(BattMITM_2.0 main.c smbus.c static_queue.c mitm.c status.c )
 
 pico_set_program_name(BattMITM_2.0 "BattMITM_2.0")
 pico_set_program_version(BattMITM_2.0 "0.1")
@@ -44,6 +44,7 @@ pico_set_program_version(BattMITM_2.0 "0.1")
 target_link_libraries(BattMITM_2.0
         pico_stdlib
         hardware_i2c
+        pico_i2c_slave
 )
 
 # Add the standard include files to the build

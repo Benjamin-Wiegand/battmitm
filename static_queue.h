@@ -21,53 +21,25 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
-#include "mitm.h"
-#include "smbus.h"
-#include "status.h"
-#include "config.h"
-#include <stdio.h>
-#include "pico/stdlib.h"
+#include <stddef.h>
 
+struct static_queue {
+    size_t max_elements;
+    size_t element_size;
 
-int main() {
-    stdio_init_all();
+    long dropped;
 
-    sleep_ms(2000);
+    size_t _index_end;
+    size_t _index_start;
+    void* _data;
+};
 
-    printf("\n\n\n======= init =======\n\n\n");
+typedef struct static_queue static_queue_t;
 
-    i2c_dev_t* bms = get_bms_dev();
-    i2c_dev_t* laptop = get_laptop_dev();
-    
-    init_status();
+static_queue_t* create_static_queue(size_t max_elements, size_t element_size);
 
-    // init batt i2c
-    gpio_set_function(BATT_I2C_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(BATT_I2C_SCL_PIN, GPIO_FUNC_I2C);
-    i2c_init(BATT_I2C, BATT_I2C_BAUD);
-    if (BATT_I2C_PULL_UP) {
-        gpio_pull_up(BATT_I2C_SDA_PIN);
-        gpio_pull_up(BATT_I2C_SCL_PIN);
-    }
+void* static_queue_add(static_queue_t* inst);
+void* static_queue_pop(static_queue_t* inst);
+void* static_queue_peek(static_queue_t* inst);
+size_t static_queue_size(static_queue_t* inst);
 
-    // init laptop i2c
-    gpio_set_function(LAPTOP_I2C_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(LAPTOP_I2C_SCL_PIN, GPIO_FUNC_I2C);
-    i2c_init(LAPTOP_I2C, LAPTOP_I2C_BAUD);
-    if (LAPTOP_I2C_PULL_UP) {
-        gpio_pull_up(LAPTOP_I2C_SDA_PIN);
-        gpio_pull_up(LAPTOP_I2C_SCL_PIN);
-    }
-
-    i2c_set_slave_mode(LAPTOP_I2C, true, LAPTOP_I2C_ADDR);
-
-    mitm_init();
-
-    int len;
-    uint16_t voltage, serial, mf_acc;
-    char vendor[32];
-
-    while (true) {
-        mitm_loop();
-    }
-}
