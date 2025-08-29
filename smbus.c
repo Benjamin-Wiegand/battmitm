@@ -64,6 +64,30 @@ bool validate_smbus_crc(uint8_t address, uint8_t cmd, uint8_t* reply, uint8_t le
 }
 
 
+void i2c_stop_blocking(i2c_dev_t* device) {
+    i2c_hw_t* hw = i2c_get_hw(device->i2c);
+
+    i2c_get_hw(device->i2c)->enable = 0;
+    i2c_get_hw(device->i2c)->tar = device->address;
+    i2c_get_hw(device->i2c)->enable = 1;
+
+    while (!i2c_get_write_available(device->i2c)) {
+        tight_loop_contents();
+    }
+
+    hw->data_cmd = I2C_IC_DATA_CMD_STOP_LSB;
+
+    bool abort;
+    do abort = hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_TX_ABRT_BITS;
+    while (!i2c_get_read_available(device->i2c) && !abort);
+
+    if (abort) hw->clr_tx_abrt;
+    else i2c_get_hw(device->i2c)->data_cmd;
+
+    device->i2c->restart_on_next = false;
+}
+
+
 /**
  * reads result from an smbus command with crc checking.
  * returns a negative value on error, or the number of bytes in the result.
@@ -127,7 +151,7 @@ int smbus_read_block(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t max
     if (block_length > max_length) {
         // don't truncate, crc can't be verified
         printf("block is longer than max_length! block_length = %d, max_length = %d\n", block_length, max_length);
-        i2c_read_blocking(device->i2c, device->address, result, 1, false);   // send stop
+        i2c_stop_blocking(device);
         return SMBUS_ERROR_GENERIC;
     }
 
