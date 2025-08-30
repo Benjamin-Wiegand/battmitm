@@ -24,8 +24,10 @@
 #include "mitm.h"
 #include "smbus.h"
 #include "status.h"
-#include "pico/i2c_slave.h"
+#include "config.h"
 #include "static_queue.h"
+#include "pico/i2c_slave.h"
+#include "pico/stdlib.h"
 #include <stdio.h>
 
 
@@ -57,20 +59,56 @@ size_t mitm_reply_buffer_index = 0;
 
 
 void mitm_laptop_irq_handler(i2c_inst_t* i2c, i2c_slave_event_t event) {
+    if (mitm_transfer_queue_overflow) return;
+
     smbus_transfer_t* transfer = static_queue_add(mitm_transfer_queue);
-    if (transfer == NULL) return; //todo
+    if (transfer == NULL) {
+        mitm_transfer_queue_overflow = true;
+        return;
+    }
 
     transfer->event = event;
     if (event == I2C_SLAVE_RECEIVE) i2c_read_raw_blocking(i2c, &transfer->data, 1);
 }
 
 
+void mitm_init_i2c() {
+    // init batt i2c
+    gpio_set_function(BATT_I2C_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(BATT_I2C_SCL_PIN, GPIO_FUNC_I2C);
+    i2c_init(BATT_I2C, BATT_I2C_BAUD);
+    if (BATT_I2C_PULL_UP) {
+        gpio_pull_up(BATT_I2C_SDA_PIN);
+        gpio_pull_up(BATT_I2C_SCL_PIN);
+    }
+
+    // init laptop i2c
+    gpio_set_function(LAPTOP_I2C_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(LAPTOP_I2C_SCL_PIN, GPIO_FUNC_I2C);
+    i2c_init(LAPTOP_I2C, LAPTOP_I2C_BAUD);
+    if (LAPTOP_I2C_PULL_UP) {
+        gpio_pull_up(LAPTOP_I2C_SDA_PIN);
+        gpio_pull_up(LAPTOP_I2C_SCL_PIN);
+    }
+
+    i2c_set_slave_mode(LAPTOP_I2C, true, LAPTOP_I2C_ADDR);
+    i2c_slave_init(LAPTOP_I2C, LAPTOP_I2C_ADDR, &mitm_laptop_irq_handler);
+}
+
+void mitm_reinit_i2c() {
+    i2c_slave_deinit(LAPTOP_I2C);
+    i2c_deinit(BATT_I2C);
+    i2c_deinit(LAPTOP_I2C);
+
+    sleep_ms(1000);
+    mitm_transfer_queue_overflow = false;
+
+    mitm_init_i2c();
+}
 
 void init_mitm() {
     mitm_transfer_queue = create_static_queue(MITM_QUEUE_MAX_ELEMENTS, MITM_QUEUE_ELEMENT_SIZE);
-
-    i2c_dev_t* laptop = get_laptop_dev();
-    i2c_slave_init(laptop->i2c, laptop->address, &mitm_laptop_irq_handler);
+    mitm_init_i2c();
 }
 
 
@@ -79,12 +117,22 @@ void mitm_loop() {
     i2c_dev_t* bms = get_bms_dev();
 
     smbus_transfer_t* transfer = static_queue_peek(mitm_transfer_queue);
-    if (transfer == NULL) return;
 
-    status_mitm(true);
+    if (mitm_transfer_queue_overflow) {
+        printf("ERROR: mitm transfer queue overflow!!! please increase MITM_QUEUE_MAX_ELEMENTS\n");
+        
+        // flush the queue
+        do {
+            transfer = static_queue_pop(mitm_transfer_queue);
+        } while (transfer != NULL);
+
+        // drop off the bus temporarily
+        mitm_reinit_i2c();
+    }
 
     while (transfer != NULL) {
-
+        status_mitm(true);
+        
         switch (transfer->event) {
             case I2C_SLAVE_RECEIVE:
 
