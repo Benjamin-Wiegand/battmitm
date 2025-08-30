@@ -22,5 +22,5 @@
     IN THE SOFTWARE.
  */
 
-int mitm_init();
+void init_mitm();
 void mitm_loop();

@@ -66,13 +66,11 @@ void mitm_laptop_irq_handler(i2c_inst_t* i2c, i2c_slave_event_t event) {
 
 
 
-int mitm_init() {
+void init_mitm() {
     mitm_transfer_queue = create_static_queue(MITM_QUEUE_MAX_ELEMENTS, MITM_QUEUE_ELEMENT_SIZE);
 
     i2c_dev_t* laptop = get_laptop_dev();
     i2c_slave_init(laptop->i2c, laptop->address, &mitm_laptop_irq_handler);
-
-    return 0;
 }
 
 

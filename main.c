@@ -64,7 +64,7 @@ int main() {
     
     init_status();
     init_i2c();
-    mitm_init();
+    init_mitm();
 
     while (true) {
         mitm_loop();
