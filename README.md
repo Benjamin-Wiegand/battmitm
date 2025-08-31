@@ -20,9 +20,10 @@ Additionally, BattMITM allows you to instruct your equipment to exceed safe oper
 please refer to the MIT license text for more information on this matter.
 
 ## project status
-passthrough partially works, no special features yet. the laptop charges and discharges as normal.
+- passthrough partially works (no host commands yet). my laptop charges and discharges as normal through it.
+- read cmd reply overrides work (these encompass 99% of useful overrides). they are defined in `config_override.h`.
 
-NOTE: laptop -> battery commands work but battery -> laptop commands don't. this means SBS alarms won't notify the laptop. 
+NOTE: as mentioned, laptop -> battery commands work but battery -> laptop commands don't. this means SBS alarms won't notify the laptop. 
 some laptops poll the battery for alarms regardless, so this may not be a huge issue for you.
 
 ## what does it do exactly and how
