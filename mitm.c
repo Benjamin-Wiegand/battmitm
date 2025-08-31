@@ -215,8 +215,6 @@ void mitm_loop() {
                 // this should never happen
                 if (previous_event == I2C_READ) {
                     printf("ERROR: no stop after read before write!!!\n");
-                    mitm_reply_buffer[0] = 0;
-                    i2c_write_raw_blocking(laptop->i2c, mitm_reply_buffer, 1);
                     break;
                 }
 
