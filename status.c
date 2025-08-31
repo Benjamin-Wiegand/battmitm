@@ -25,7 +25,11 @@
 #include "config.h"
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
+#include "pico/stdlib.h"
 
+#define PWM_FULL 65535
+#define PWM_HALF PWM_FULL / 2
+#define PWM_OFF 0
 
 #define STATUS_ITEMS 1
 #define STATUS_ITEM_MITM_INDEX 0
@@ -40,6 +44,16 @@ void init_status() {
     gpio_set_function(STATUS_LED_PIN, GPIO_FUNC_PWM);
     uint slice_num = pwm_gpio_to_slice_num(STATUS_LED_PIN);
     pwm_init(slice_num, &config, true);
+
+    // "I'm alive"
+    pwm_set_gpio_level(STATUS_LED_PIN, PWM_HALF);
+    sleep_ms(100);
+    pwm_set_gpio_level(STATUS_LED_PIN, PWM_OFF);
+    sleep_ms(100);
+    pwm_set_gpio_level(STATUS_LED_PIN, PWM_HALF);
+    sleep_ms(100);
+    pwm_set_gpio_level(STATUS_LED_PIN, PWM_OFF);
+    
 }
 
 void status_led_update() {
