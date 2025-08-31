@@ -29,6 +29,7 @@
 #include "pico/stdlib.h"
 #include "hardware/irq.h"
 #include <stdio.h>
+#include "config_override.h"
 
 enum i2c_transfer_event {
     I2C_READ,
@@ -187,50 +188,6 @@ void init_mitm() {
 }
 
 
-/* int vendor_override(uint8_t cmd, uint8_t* reply_buffer) {
-    reply_buffer[0] = 4;
-    reply_buffer[1] = 't';
-    reply_buffer[2] = 'e';
-    reply_buffer[3] = 's';
-    reply_buffer[4] = 't';
-
-    if (!mitm_generate_reply_crc(reply_buffer, 5, true)) return -1;
-    return 0;
-} */
-
-int vendor_override(uint8_t cmd, uint8_t* reply_buffer) {
-    int index = 0;
-    int ret;
-
-    // block length
-    ret = mitm_read_batt_reply(reply_buffer, 1);
-    if (ret < 0) return -1;
-    index += ret;
-
-    // block content + crc
-    ret = mitm_read_batt_reply(reply_buffer + 1, reply_buffer[0] + 1);
-    if (ret < 0) return -1;
-    index += ret;
-    
-    // validate crc
-    if (!mitm_validate_batt_reply(reply_buffer, index - 1, true)) return -1;
-
-
-    // modify block content
-    for (int i = 1; i < index - 1; i++) {
-        if (reply_buffer[i] == 'A')
-            reply_buffer[i] = 'O';
-    }
-
-
-    // generate new crc
-    if (!mitm_generate_reply_crc(reply_buffer, index - 1, true)) return -1;
-
-    return 0;
-}
-
-
-
 void mitm_loop() {
     i2c_dev_t* laptop = get_laptop_dev();
     i2c_dev_t* bms = get_bms_dev();
@@ -336,15 +293,21 @@ void mitm_loop() {
                     i2c_write_blocking(bms->i2c, bms->address, mitm_cmd_buffer + mitm_cmd_buffer_index - 1, 1, true);
                     printf("switching TX -> RX after sending (%d bytes)\n", mitm_cmd_buffer_index);
 
-                    if (mitm_cmd_buffer_index == 1) { // command
-                        // todo: config
-                        if (mitm_cmd_buffer[0] == 0x20) {
-                            //todo: error cond
-                            vendor_override(mitm_cmd_buffer[0], mitm_reply_buffer);
+                    // apply read command overrides
+                    if (mitm_cmd_buffer_index == 1) { // read command
+                        cmd_reply_override override = get_read_command_reply_override(mitm_cmd_buffer[0]);
+                        if (override != NULL) {
                             reply_override = true;
-                            printf("reply override!\n");
+                            printf("read command reply override!\n");
+                            int ret = override(mitm_cmd_buffer[0], mitm_reply_buffer);
+                            if (ret < 0) {
+                                printf("read command reply override returned %d, trashing response\n", ret);
+                                // since the slave can't abort the transfer, this is the best we can do
+                                for (int i = 0; i < MITM_REPLY_BUFFER_SIZE; i++) {
+                                    mitm_reply_buffer[i] = 0;
+                                }
+                            }
                         }
-                        
                     }
 
                 } else if (previous_event == I2C_READ) {

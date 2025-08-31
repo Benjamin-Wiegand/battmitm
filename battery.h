@@ -1,0 +1,65 @@
+/**
+    MIT License
+
+    Copyright (c) 2025 Benjamin Wiegand
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy 
+    of this software and associated documentation files (the "Software"), to deal 
+    in the Software without restriction, including without limitation the rights 
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+    copies of the Software, and to permit persons to whom the Software is 
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in 
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+    IN THE SOFTWARE.
+ */
+
+#define BATT_CMD_MANUFACTURER_ACCESS 0x00
+#define BATT_CMD_REMAINING_CAPACITY_ALARM 0x01
+#define BATT_CMD_REMAINING_TIME_ALARM 0x02
+
+#define BATT_CMD_BATTERY_MODE 0x03
+#define BATT_CMD_AT_RATE 0x04
+#define BATT_CMD_AT_RATE_TIME_TO_FULL 0x05
+#define BATT_CMD_AT_RATE_TIME_TO_EMPTY 0x06
+#define BATT_CMD_AT_RATE_OK 0x07
+
+#define BATT_CMD_TEMPERATURE 0x08
+#define BATT_CMD_VOLTAGE 0x09
+#define BATT_CMD_CURRENT 0x0a
+#define BATT_CMD_AVERAGE_CURRENT 0x0b
+
+#define BATT_CMD_MAX_ERROR 0x0c
+#define BATT_CMD_RELATIVE_STATE_OF_CHARGE 0x0d
+#define BATT_CMD_ABSOLUTE_STATE_OF_CHARGE 0x0e
+#define BATT_CMD_REMAINING_CAPACITY 0x0f
+#define BATT_CMD_FULL_CHARGE_CAPACITY 0x10
+
+#define BATT_CMD_RUN_TIME_TO_EMPTY 0x11
+#define BATT_CMD_AVERAGE_TIME_TO_EMPTY 0x12
+#define BATT_CMD_AVERAGE_TIME_TO_FULL 0x13
+
+#define BATT_CMD_CHARGING_CURRENT 0x14
+#define BATT_CMD_CHARGING_VOLTAGE 0x15
+
+#define BATT_CMD_BATTERY_STATUS 0x16
+#define BATT_CMD_CYCLE_COUNT 0x17
+#define BATT_CMD_DESIGN_CAPACITY 0x18
+#define BATT_CMD_DESIGN_VOLTAGE 0x19
+#define BATT_CMD_SPECIFICATION_INFO 0x1a
+#define BATT_CMD_MANUFACTURE_DATE 0x1b
+#define BATT_CMD_SERIAL_NUMBER 0x1c
+
+#define BATT_CMD_MANUFACTURER_NAME 0x20
+#define BATT_CMD_DEVICE_NAME 0x21
+#define BATT_CMD_DEVICE_CHEMISTRY 0x22
+#define BATT_CMD_MANUFACTURER_DATA 0x23
+
