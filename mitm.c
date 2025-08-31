@@ -47,13 +47,7 @@ struct i2c_transfer {
 
 typedef struct i2c_transfer i2c_transfer_t;
 
-
 #define MITM_QUEUE_ELEMENT_SIZE sizeof(i2c_transfer_t)
-#define MITM_QUEUE_MAX_ELEMENTS 100
-
-#define MITM_CMD_BUFFER_SIZE 64
-#define MITM_REPLY_BUFFER_SIZE 64
-
 
 static_queue_t* mitm_transfer_queue;
 bool mitm_transfer_queue_overflow = false;
@@ -65,6 +59,7 @@ size_t mitm_cmd_buffer_index = 0;
 
 uint8_t mitm_reply_buffer[MITM_REPLY_BUFFER_SIZE];
 size_t mitm_reply_buffer_index = 0;
+bool reply_override = false;
 
 
 void mitm_laptop_on_i2c_event(i2c_transfer_event_t event) {
@@ -155,10 +150,85 @@ void mitm_reinit_i2c() {
     mitm_init_i2c();
 }
 
+
+int mitm_read_batt_reply(uint8_t* buffer, size_t length) {
+    return i2c_read_burst_blocking(BATT_I2C, BATT_I2C_ADDR, buffer, length);
+}
+
+bool mitm_validate_batt_reply(uint8_t* buffer, uint8_t crc_index, bool is_block) {
+    if (mitm_cmd_buffer_index != 1) return false;               // not a reply
+    if (is_block && crc_index < 1) return false;                // block requires at least one byte for the length
+    if (is_block && buffer[0] != crc_index - 1) return false;   // block length does not match crc index
+
+    return validate_smbus_crc(
+        BATT_I2C_ADDR, mitm_cmd_buffer[0], 
+        is_block ? &buffer[1] : buffer, 
+        is_block ? buffer[0] : crc_index, 
+        buffer[crc_index], is_block, true);
+}
+
+int mitm_generate_reply_crc(uint8_t* buffer, uint8_t crc_index, bool is_block) {
+    if (mitm_cmd_buffer_index != 1) return -1;              // not a reply
+    if (is_block && crc_index < 1) return -1;               // block requires at least one byte for the length
+    if (is_block && buffer[0] != crc_index - 1) return -1;  // block length does not match crc index
+
+    buffer[crc_index] = generate_smbus_crc(
+        BATT_I2C_ADDR, mitm_cmd_buffer[0], 
+        is_block ? &buffer[1] : buffer,
+        is_block ? buffer[0] : crc_index, 
+        is_block, true);
+    return 0;
+}
+
+
 void init_mitm() {
     mitm_transfer_queue = create_static_queue(MITM_QUEUE_MAX_ELEMENTS, MITM_QUEUE_ELEMENT_SIZE);
     mitm_init_i2c();
 }
+
+
+/* int vendor_override(uint8_t cmd, uint8_t* reply_buffer) {
+    reply_buffer[0] = 4;
+    reply_buffer[1] = 't';
+    reply_buffer[2] = 'e';
+    reply_buffer[3] = 's';
+    reply_buffer[4] = 't';
+
+    if (!mitm_generate_reply_crc(reply_buffer, 5, true)) return -1;
+    return 0;
+} */
+
+int vendor_override(uint8_t cmd, uint8_t* reply_buffer) {
+    int index = 0;
+    int ret;
+
+    // block length
+    ret = mitm_read_batt_reply(reply_buffer, 1);
+    if (ret < 0) return -1;
+    index += ret;
+
+    // block content + crc
+    ret = mitm_read_batt_reply(reply_buffer + 1, reply_buffer[0] + 1);
+    if (ret < 0) return -1;
+    index += ret;
+    
+    // validate crc
+    if (!mitm_validate_batt_reply(reply_buffer, index - 1, true)) return -1;
+
+
+    // modify block content
+    for (int i = 1; i < index - 1; i++) {
+        if (reply_buffer[i] == 'A')
+            reply_buffer[i] = 'O';
+    }
+
+
+    // generate new crc
+    if (!mitm_generate_reply_crc(reply_buffer, index - 1, true)) return -1;
+
+    return 0;
+}
+
 
 
 void mitm_loop() {
@@ -225,9 +295,14 @@ void mitm_loop() {
                     break;
                 }
 
-                // forward reply from bms
-                i2c_read_burst_blocking(bms->i2c, bms->address, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
-                i2c_write_raw_blocking(laptop->i2c, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
+                if (reply_override) {
+                    // forward modified reply
+                    i2c_write_raw_blocking(laptop->i2c, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
+                } else {
+                    // forward reply from bms
+                    i2c_read_burst_blocking(bms->i2c, bms->address, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
+                    i2c_write_raw_blocking(laptop->i2c, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
+                }
 
                 printf("RX 0x%02x\n", mitm_reply_buffer[mitm_reply_buffer_index]);
 
@@ -252,22 +327,34 @@ void mitm_loop() {
 
                 mitm_cmd_buffer_index = 0;
                 mitm_reply_buffer_index = 0;
+                reply_override = false;
                 break;
             case I2C_START:
+                reply_override = false;
 
                 if (previous_event == I2C_WRITE) {
                     i2c_write_blocking(bms->i2c, bms->address, mitm_cmd_buffer + mitm_cmd_buffer_index - 1, 1, true);
                     printf("switching TX -> RX after sending (%d bytes)\n", mitm_cmd_buffer_index);
-                    mitm_cmd_buffer_index = 0;
+
+                    if (mitm_cmd_buffer_index == 1) { // command
+                        // todo: config
+                        if (mitm_cmd_buffer[0] == 0x20) {
+                            //todo: error cond
+                            vendor_override(mitm_cmd_buffer[0], mitm_reply_buffer);
+                            reply_override = true;
+                            printf("reply override!\n");
+                        }
+                        
+                    }
+
                 } else if (previous_event == I2C_READ) {
                     printf("START - end of RX (%d bytes)\n", mitm_reply_buffer_index);
-                    mitm_reply_buffer_index = 0;
                 } else {
                     printf("START\n");
-                    mitm_cmd_buffer_index = 0;
-                    mitm_reply_buffer_index = 0;
                 }
 
+                mitm_cmd_buffer_index = 0;
+                mitm_reply_buffer_index = 0;
                 break;
             default:
                 break;
@@ -281,6 +368,4 @@ void mitm_loop() {
     status_mitm(false);
 
 }
-
-
 
