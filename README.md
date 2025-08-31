@@ -5,9 +5,13 @@ rewriting it for pi pico for some reason.
 
 the goal is to match (and possibly exceed) the existing implementation currently mounted to my laptop that I'm typing this on:
 ![the arduino leonardo that's attached to my battery, complete with small OLED display](https://ben.wiegand.pw/img/smbus-mitm-arduino-thumb.webp)
-to imagine what it would look like, pretend that it's a pi pico and that I've figured out a solution for the 5V regulator that I now need.
+to imagine what it would look like, pretend that it's a pi pico on a piece of protoboard instead of an arduino leonardo.
+
+also I broke the arduino while working on this. there's no going back now.
 
 ## liability disclaimer
+
+> **IMPORTANT: currently, SBS alarms may not work depending on your laptop. see project status.**
 
 **if you use BattMITM, you are doing so at your own risk.** while battery protection technology tends to be pretty safe these days, I'm not responsible for any adverse side-effects of using BattMITM.
 
@@ -16,7 +20,10 @@ Additionally, BattMITM allows you to instruct your equipment to exceed safe oper
 please refer to the MIT license text for more information on this matter.
 
 ## project status
-hello world
+passthrough partially works, no special features yet. the laptop charges and discharges as normal.
+
+NOTE: laptop -> battery commands work but battery -> laptop commands don't. this means SBS alarms won't notify the laptop. 
+some laptops poll the battery for alarms regardless, so this may not be a huge issue for you.
 
 ## what does it do exactly and how
 
@@ -103,6 +110,9 @@ nothing would stop you from even trying to enter the bootrom of your BMS and rep
 
 
 ## is this safe?
+
+> **IMPORTANT: currently, SBS alarms may not work depending on your laptop. see project status.**
+
 to an extent.
 
 here is my full honest answer:
