@@ -21,26 +21,23 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
-#include "mitm.h"
-#include "status.h"
-#include "pico/stdlib.h"
-#include <stdio.h>
-#include "display.h"
 
+uint16_t rgb888_to_565(uint32_t color24);
 
-int main() {
-    stdio_init_all();
-    init_status();
-    init_display();
-    init_mitm();
+void display_set_rectangle_fill(bool enabled);
+void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t stroke_color, uint16_t fill_color);
+void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color);
+void display_draw_char(uint8_t x_offset, uint8_t y_offset, uint8_t scale_factor, uint16_t color, char c);
 
-    display_print("hello world");
-    
-    for (int i = 0; i < 95; i++)
-        display_shift(1, 1, 0x0000);
+void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y);
+void display_shift(int x, int y, uint16_t negative_color);
 
     
-    while (true) {
-        mitm_loop();
-    }
-}
+void display_set_text_color(uint16_t color);
+void display_set_text_scale(uint8_t scale_factor);
+void display_set_text_position(uint8_t x, uint8_t y);
+
+void display_print(char* text);
+void display_printf(char* text, ...);
+    
+void init_display();

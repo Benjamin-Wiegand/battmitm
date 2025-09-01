@@ -46,3 +46,16 @@
 
 #define LAPTOP_I2C_ADDR BATT_I2C_ADDR   // use the same address
 #define LAPTOP_I2C_BAUD BATT_I2C_BAUD   // use the same baud (for now)
+
+
+// spi display
+#define DISPLAY_SPI spi0
+#define DISPLAY_SPI_BAUD 8000
+#define DISPLAY_SCL_PIN 6
+#define DISPLAY_SDA_PIN 7
+
+#define DISPLAY_CS_PIN 3
+#define DISPLAY_DC_PIN 4
+#define DISPLAY_RESET_PIN 5
+
+#define DISPLAY_FLIP_180 false

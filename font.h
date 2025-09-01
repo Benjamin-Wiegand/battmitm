@@ -21,26 +21,10 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
-#include "mitm.h"
-#include "status.h"
-#include "pico/stdlib.h"
-#include <stdio.h>
-#include "display.h"
+#include <stdint.h>
 
+#define FONT_WIDTH 5
+#define FONT_HEIGHT 7
+#define FONT_BYTES_PER_CHAR 5
 
-int main() {
-    stdio_init_all();
-    init_status();
-    init_display();
-    init_mitm();
-
-    display_print("hello world");
-    
-    for (int i = 0; i < 95; i++)
-        display_shift(1, 1, 0x0000);
-
-    
-    while (true) {
-        mitm_loop();
-    }
-}
+uint8_t* font_get_char(char c);
