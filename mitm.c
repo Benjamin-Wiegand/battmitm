@@ -192,7 +192,7 @@ void mitm_loop() {
     i2c_dev_t* laptop = get_laptop_dev();
     i2c_dev_t* bms = get_bms_dev();
 
-    i2c_transfer_t* transfer = static_queue_peek(mitm_transfer_queue);
+    i2c_transfer_t* transfer;
 
     if (mitm_transfer_queue_overflow) {
         printf("ERROR: mitm transfer queue overflow!!! please increase MITM_QUEUE_MAX_ELEMENTS\n");
@@ -206,7 +206,11 @@ void mitm_loop() {
         mitm_reinit_i2c();
     }
 
-    while (transfer != NULL) {
+    do {
+        transfer = static_queue_peek(mitm_transfer_queue);
+        if (transfer == NULL) continue;
+        if (mitm_transfer_queue_overflow) break;
+
         status_mitm(true);
         
         switch (transfer->event) {
@@ -320,11 +324,11 @@ void mitm_loop() {
             default:
                 break;
         }
-        
+
         previous_event = transfer->event;
         static_queue_pop(mitm_transfer_queue);
-        transfer = static_queue_peek(mitm_transfer_queue);
-    } 
+
+    } while (transfer != NULL || (previous_event != I2C_STOP && previous_event != I2C_ABORT));
 
     status_mitm(false);
 
