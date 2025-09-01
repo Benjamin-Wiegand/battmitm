@@ -189,6 +189,7 @@ void init_mitm() {
 
 
 void mitm_loop() {
+    int ret;
     i2c_dev_t* laptop = get_laptop_dev();
     i2c_dev_t* bms = get_bms_dev();
 
@@ -229,7 +230,8 @@ void mitm_loop() {
                 
                 // write previous byte
                 if (mitm_cmd_buffer_index > 0) {
-                    i2c_write_burst_blocking(bms->i2c, bms->address, &mitm_cmd_buffer[mitm_cmd_buffer_index - 1], 1);
+                    ret = i2c_write_burst_blocking(bms->i2c, bms->address, &mitm_cmd_buffer[mitm_cmd_buffer_index - 1], 1);
+                    if (ret < 0) printf("BATT ERROR %d!\n", ret);
                 }
 
                 mitm_cmd_buffer[mitm_cmd_buffer_index++] = transfer->data;
@@ -259,7 +261,8 @@ void mitm_loop() {
                     i2c_write_raw_blocking(laptop->i2c, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
                 } else {
                     // forward reply from bms
-                    i2c_read_burst_blocking(bms->i2c, bms->address, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
+                    ret = i2c_read_burst_blocking(bms->i2c, bms->address, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
+                    if (ret < 0) printf("BATT ERROR %d! - ", ret);
                     i2c_write_raw_blocking(laptop->i2c, &mitm_reply_buffer[mitm_reply_buffer_index], 1);
                 }
 
@@ -272,12 +275,14 @@ void mitm_loop() {
                 bool aborted = transfer->event == I2C_ABORT;
 
                 if (previous_event == I2C_WRITE) {
-                    i2c_write_blocking(bms->i2c, bms->address, mitm_cmd_buffer + mitm_cmd_buffer_index - 1, 1, false);
+                    ret = i2c_write_timeout_us(bms->i2c, bms->address, mitm_cmd_buffer + mitm_cmd_buffer_index - 1, 1, false, bms->timeout);
                     if (aborted) printf("ABORT - ");
+                    if (ret < 0) printf("BATT ERROR %d! - ", ret);
                     printf("end of TX (%d bytes)\n", mitm_cmd_buffer_index);
                 } else if (previous_event == I2C_READ) {
-                    i2c_stop_blocking(bms);     // pay the court a fine or serve your sentence
+                    ret = i2c_stop_read_blocking(bms);
                     if (aborted) printf("ABORT - ");
+                    if (ret < 0) printf("BATT ERROR %d! - ", ret);
                     printf("end of RX (%d bytes)\n", mitm_reply_buffer_index);
                 } else {
                     if (aborted) printf("ABORT\n");
@@ -292,11 +297,11 @@ void mitm_loop() {
                 reply_override = false;
 
                 if (previous_event == I2C_WRITE) {
-                    i2c_write_blocking(bms->i2c, bms->address, mitm_cmd_buffer + mitm_cmd_buffer_index - 1, 1, true);
+                    ret = i2c_write_timeout_us(bms->i2c, bms->address, mitm_cmd_buffer + mitm_cmd_buffer_index - 1, 1, true, bms->timeout);
                     printf("switching TX -> RX after sending (%d bytes)\n", mitm_cmd_buffer_index);
-
-                    // apply read command overrides
-                    if (mitm_cmd_buffer_index == 1) { // read command
+                    if (ret < 0) printf("BATT ERROR %d!\n", ret);
+                    else if (mitm_cmd_buffer_index == 1) { // read command
+                        // apply read command overrides
                         cmd_reply_override override = get_read_command_reply_override(mitm_cmd_buffer[0]);
                         if (override != NULL) {
                             reply_override = true;

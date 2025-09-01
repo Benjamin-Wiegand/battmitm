@@ -33,6 +33,7 @@
 struct i2c_dev {
     i2c_inst_t* i2c;
     uint8_t address;
+    uint timeout;
 };
 
 typedef struct i2c_dev i2c_dev_t;
@@ -40,7 +41,7 @@ typedef struct i2c_dev i2c_dev_t;
 i2c_dev_t* get_bms_dev();
 i2c_dev_t* get_laptop_dev();
 
-void i2c_stop_blocking(i2c_dev_t* device);
+int i2c_stop_read_blocking(i2c_dev_t* device);
 int generate_smbus_crc(uint8_t address, uint8_t cmd, uint8_t* reply, uint8_t length, bool is_block, bool is_read);
 bool validate_smbus_crc(uint8_t address, uint8_t cmd, uint8_t* reply, uint8_t length, uint8_t recieved_crc, bool is_block, bool is_read);
 

@@ -29,8 +29,8 @@
 struct i2c_dev;
 
 
-i2c_dev_t _i2c_bms_dev = {BATT_I2C, BATT_I2C_ADDR};
-i2c_dev_t _i2c_laptop_dev = {LAPTOP_I2C, LAPTOP_I2C_ADDR};
+i2c_dev_t _i2c_bms_dev = {BATT_I2C, BATT_I2C_ADDR, BATT_I2C_TIMEOUT};
+i2c_dev_t _i2c_laptop_dev = {LAPTOP_I2C, LAPTOP_I2C_ADDR, LAPTOP_I2C_TIMEOUT};
 
 
 i2c_dev_t* get_bms_dev() {
@@ -81,27 +81,8 @@ bool validate_smbus_crc(uint8_t address, uint8_t cmd, uint8_t* reply, uint8_t le
 }
 
 
-void i2c_stop_blocking(i2c_dev_t* device) {
-    i2c_hw_t* hw = i2c_get_hw(device->i2c);
-
-    i2c_get_hw(device->i2c)->enable = 0;
-    i2c_get_hw(device->i2c)->tar = device->address;
-    i2c_get_hw(device->i2c)->enable = 1;
-
-    while (!i2c_get_write_available(device->i2c)) {
-        tight_loop_contents();
-    }
-
-    hw->data_cmd = I2C_IC_DATA_CMD_STOP_LSB;
-
-    bool abort;
-    do abort = hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_TX_ABRT_BITS;
-    while (!i2c_get_read_available(device->i2c) && !abort);
-
-    if (abort) hw->clr_tx_abrt;
-    else i2c_get_hw(device->i2c)->data_cmd;
-
-    device->i2c->restart_on_next = false;
+int i2c_stop_read_blocking(i2c_dev_t* device) {
+    return i2c_read_timeout_us(device->i2c, device->address, NULL, 1, false, device->timeout);
 }
 
 
@@ -116,7 +97,7 @@ int smbus_read(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t length) {
     uint8_t crc;
 
     // write command code
-    ret = i2c_write_blocking(device->i2c, device->address, &cmd, 1, true);
+    ret = i2c_write_timeout_us(device->i2c, device->address, &cmd, 1, true, device->timeout);
     if (ret < 0) {
         printf("failed, write returned %d\n", ret);
         return SMBUS_ERROR_DEVICE;
@@ -130,7 +111,7 @@ int smbus_read(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t length) {
     }
 
     // read crc
-    ret = i2c_read_blocking(device->i2c, device->address, &crc, 1, false);
+    ret = i2c_read_timeout_us(device->i2c, device->address, &crc, 1, false, device->timeout);
     if (ret < 0) {
         printf("failed, crc read returned %d\n", ret);
         return SMBUS_ERROR_DEVICE;
@@ -152,7 +133,7 @@ int smbus_read_block(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t max
     uint8_t block_length, crc;
 
     // write command code
-    ret = i2c_write_blocking(device->i2c, device->address, &cmd, 1, true);
+    ret = i2c_write_timeout_us(device->i2c, device->address, &cmd, 1, true, device->timeout);
     if (ret < 0) {
         printf("failed, write returned %d\n", ret);
         return SMBUS_ERROR_DEVICE;
@@ -168,7 +149,7 @@ int smbus_read_block(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t max
     if (block_length > max_length) {
         // don't truncate, crc can't be verified
         printf("block is longer than max_length! block_length = %d, max_length = %d\n", block_length, max_length);
-        i2c_stop_blocking(device);
+        i2c_stop_read_blocking(device);
         return SMBUS_ERROR_GENERIC;
     }
 
@@ -180,7 +161,7 @@ int smbus_read_block(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t max
     }
 
     // read crc
-    ret = i2c_read_blocking(device->i2c, device->address, &crc, 1, false);
+    ret = i2c_read_timeout_us(device->i2c, device->address, &crc, 1, false, device->timeout);
     if (ret < 0) {
         printf("failed, crc read returned %d\n", ret);
         return SMBUS_ERROR_DEVICE;

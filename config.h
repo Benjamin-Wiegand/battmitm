@@ -36,6 +36,7 @@
 
 #define BATT_I2C_ADDR 0x0b
 #define BATT_I2C_BAUD 32000
+#define BATT_I2C_TIMEOUT 200000          // in microseconds
 
 
 // i2c connected to laptop (as slave)
@@ -46,6 +47,7 @@
 
 #define LAPTOP_I2C_ADDR BATT_I2C_ADDR   // use the same address
 #define LAPTOP_I2C_BAUD BATT_I2C_BAUD   // use the same baud (for now)
+#define LAPTOP_I2C_TIMEOUT BATT_I2C_TIMEOUT
 
 
 // spi display
