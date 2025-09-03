@@ -209,6 +209,12 @@ void draw_char(uint8_t x_pos, uint8_t y_pos, uint8_t scale_factor, uint16_t colo
     }
 }
 
+void display_draw_pixel(uint8_t x, uint8_t y, uint16_t color) {
+    uint8_t color_bytes[2] = {color >> 8, color & 0xFF};
+    set_display_address_window(x, y, 1, 1); 
+    display_send_buffer(color_bytes, 2);
+}
+
 
 void display_set_text_color(uint16_t color) {
     text_color = color;
