@@ -27,20 +27,93 @@
 #include <stdio.h>
 #include "display.h"
 
+#include "pico/rand.h"
+#include "battery.h"
+#include "smbus.h"
+
+bool do_update = false;
+uint8_t burn_offset_x = 0;
+uint8_t burn_offset_y = 0;
+
+bool trigger_display_update(struct repeating_timer* t) {
+    do_update = true;
+    return true;
+}
+
+bool update_burn_offset(struct repeating_timer* t) {
+    burn_offset_x = get_rand_32() % 5;
+    burn_offset_y = get_rand_32() % 5;
+    return true;
+}
+
+void update_display() {
+    // clear
+    display_set_rectangle_fill(true);
+    display_draw_rectangle(0, 0, 95, 63, 0, 0);
+
+    // new text
+    display_set_text_position(0 + burn_offset_x, 20 + burn_offset_y);
+    display_set_text_color(rgb888_to_565(0x101010)); //todo
+    display_set_text_scale(2);
+    
+    battery_stat_t* stat;
+    stat = battery_get_stat(BATT_CMD_RELATIVE_STATE_OF_CHARGE);
+    if (battery_stat_is_expired(stat))
+        display_print("loading...");
+    else if (battery_stat_is_error(stat))
+        display_print("error");
+    else 
+        display_printf("%d%%", *((uint16_t*) stat->cached_result));
+
+    display_set_text_scale(1);
+    display_print("\n");
+
+    stat = battery_get_stat(BATT_CMD_VOLTAGE);
+    if (battery_stat_is_expired(stat))
+        display_print("loading...");
+    else if (battery_stat_is_error(stat))
+        display_print("error");
+    else 
+        display_printf("%.3f V", (*((uint16_t*) stat->cached_result)) / 1000.0);
+
+    display_print("\n");
+
+    stat = battery_get_stat(BATT_CMD_CURRENT);
+    if (battery_stat_is_expired(stat))
+        display_print("loading...");
+    else if (battery_stat_is_error(stat))
+        display_print("error");
+    else 
+        display_printf("%.3f A", (*((int16_t*) stat->cached_result)) / 1000.0);
+
+    display_print("\n");
+
+}
 
 int main() {
     stdio_init_all();
     init_status();
     init_display();
+    init_battery();
+    
+    display_set_text_position(1, 40);
+    display_set_text_color(0xFFFF);
+    display_set_text_scale(2);
+    display_print("BattMITM");
+
+
+    struct repeating_timer display_update_timer;
+    struct repeating_timer burn_offset_timer;
+    add_repeating_timer_ms(2000, trigger_display_update, NULL, &display_update_timer);
+    add_repeating_timer_ms(10000, update_burn_offset, NULL, &burn_offset_timer);
+
     init_mitm();
-
-    display_print("hello world");
-    
-    for (int i = 0; i < 95; i++)
-        display_shift(1, 1, 0x0000);
-
-    
     while (true) {
         mitm_loop();
+        battery_update_cache();
+        if (do_update) {
+            do_update = false;
+            update_display();
+        }
     }
 }
