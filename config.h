@@ -52,7 +52,7 @@
 
 // spi display
 #define DISPLAY_SPI spi0
-#define DISPLAY_SPI_BAUD 8000
+#define DISPLAY_SPI_BAUD 8000000
 #define DISPLAY_SCL_PIN 6
 #define DISPLAY_SDA_PIN 7
 

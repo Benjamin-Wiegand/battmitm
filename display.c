@@ -123,6 +123,7 @@ void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint
     display_send_cmd(rgb565_red(fill_color));
     display_send_cmd(rgb565_green(fill_color));
     display_send_cmd(rgb565_blue(fill_color));
+    sleep_ms(1);
 }
 
 void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color) {
@@ -136,6 +137,7 @@ void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t 
     display_send_cmd(rgb565_red(color));
     display_send_cmd(rgb565_green(color));
     display_send_cmd(rgb565_blue(color));
+    sleep_ms(1);
 }
 
 
@@ -149,6 +151,7 @@ void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x
     
     display_send_cmd(dest_x);
     display_send_cmd(dest_y);
+    sleep_ms(1);
 }
 
 void display_shift(int x, int y, uint16_t negative_color) {
