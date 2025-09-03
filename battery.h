@@ -21,6 +21,8 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
+#include <stdint.h>
+#include <stdbool.h>
 
 #define BATT_CMD_MANUFACTURER_ACCESS 0x00
 #define BATT_CMD_REMAINING_CAPACITY_ALARM 0x01
@@ -63,3 +65,41 @@
 #define BATT_CMD_DEVICE_CHEMISTRY 0x22
 #define BATT_CMD_MANUFACTURER_DATA 0x23
 
+
+#define BATTERY_STAT_VALID_PERIOD_DEFAULT 5000000       // 5 sec
+#define BATTERY_STAT_VALID_PERIOD_CONSTANT 1200000000   // 20 min
+#define BATTERY_STAT_MIN_RETRY_PERIOD 3000000           // 3 sec
+
+
+enum battery_stat_type {
+    SBS_BYTES,
+    SBS_BLOCK,
+    SBS_STRING
+};
+
+typedef enum battery_stat_type battery_stat_type_t;
+
+struct battery_stat {
+    uint8_t read_command;
+    char* friendly_name;
+    uint8_t max_result_length;
+    uint32_t valid_for;
+    battery_stat_type_t type;
+
+    void* cached_result;
+    uint8_t result_length;
+    bool result_valid;
+    uint64_t last_updated;
+
+    bool update_requested;
+};
+
+typedef struct battery_stat battery_stat_t;
+
+
+bool battery_stat_is_error(battery_stat_t* batt_stat);
+bool battery_stat_is_expired(battery_stat_t* batt_stat);
+battery_stat_t* battery_get_stat(uint8_t cmd);
+void battery_update_cache();
+
+void init_battery();
