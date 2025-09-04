@@ -26,14 +26,19 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 #include "display.h"
+#include "button.h"
 
 #include "pico/rand.h"
 #include "battery.h"
 #include "smbus.h"
 
+#include "config.h"
+
 bool do_update = false;
 uint8_t burn_offset_x = 0;
 uint8_t burn_offset_y = 0;
+uint8_t button_down_ctrs[] = {0, 0, 0};
+uint8_t button_up_ctrs[] = {0, 0, 0};
 
 bool trigger_display_update(struct repeating_timer* t) {
     do_update = true;
@@ -88,6 +93,29 @@ void update_display() {
 
     display_print("\n");
 
+    display_print(button_get_state(BUTTON_NAV_UP) == BUTTON_DOWN ? " D " : " U ");
+    display_print(button_get_state(BUTTON_SELECT) == BUTTON_DOWN ? "  D " : "  U ");
+    display_print(button_get_state(BUTTON_NAV_DOWN) == BUTTON_DOWN ? "  D " : "  U ");
+    display_print("\n");
+    
+    display_printf("%03d %03d %03d\n", button_down_ctrs[0], button_down_ctrs[1], button_down_ctrs[2]);
+    display_printf("%03d %03d %03d\n", button_up_ctrs[0], button_up_ctrs[1], button_up_ctrs[2]);
+
+}
+
+void button_callback(button_func_t function, button_event_t event) {
+    switch (event) {
+        case BUTTON_UP:
+            button_up_ctrs[function]++;
+            break;
+        case BUTTON_DOWN:
+        case BUTTON_DOWN_REPEAT:
+            button_down_ctrs[function]++;
+            break;
+        default:
+            break;
+    }
+    do_update = true;
 }
 
 int main() {
@@ -95,6 +123,9 @@ int main() {
     init_status();
     init_display();
     init_battery();
+    init_button();
+
+    button_set_callback(&button_callback);
     
     display_set_text_position(1, 40);
     display_set_text_color(0xFFFF);

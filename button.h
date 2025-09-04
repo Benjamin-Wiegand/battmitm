@@ -21,50 +21,34 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
+#define BUTTON_DEBOUNCE_THRESHOLD 1000  // min delay in microseconds from button up/down transition to event firing
+#define BUTTON_REPEAT_INTERVAL 50000    // in microseconds
+#define BUTTON_REPEAT_DELAY 1000000     // in microseconds
 
 
-// use on-board led
-#define STATUS_LED_PIN 25
-#define STATUS_LED_MAX_BRIGHTNESS 10000 // 0-65535
+enum button_event {
+    BUTTON_UP,
+    BUTTON_DOWN,
+    BUTTON_DOWN_REPEAT
+};
+
+typedef enum button_event button_event_t;
+
+enum button_func {
+    BUTTON_NAV_UP,
+    BUTTON_SELECT,
+    BUTTON_NAV_DOWN,
+    
+    BUTTON_FUNCTIONS
+};
+
+typedef enum button_func button_func_t;
+
+typedef void (*button_callback_t)(button_func_t function, button_event_t event);
 
 
-// i2c connected to battery (as master)
-#define BATT_I2C i2c1
-#define BATT_I2C_SDA_PIN 18
-#define BATT_I2C_SCL_PIN 19
-#define BATT_I2C_PULL_UP true           // disable this if you have an external resistor
+button_event_t button_get_state(button_func_t function);
 
-#define BATT_I2C_ADDR 0x0b
-#define BATT_I2C_BAUD 32000
-#define BATT_I2C_TIMEOUT 200000          // in microseconds
-
-
-// i2c connected to laptop (as slave)
-#define LAPTOP_I2C i2c0
-#define LAPTOP_I2C_SDA_PIN 20
-#define LAPTOP_I2C_SCL_PIN 21
-#define LAPTOP_I2C_PULL_UP false        // enable this if your laptop smbus is broken ig
-
-#define LAPTOP_I2C_ADDR BATT_I2C_ADDR   // use the same address
-#define LAPTOP_I2C_BAUD BATT_I2C_BAUD   // use the same baud (for now)
-#define LAPTOP_I2C_TIMEOUT BATT_I2C_TIMEOUT
-
-
-// spi display
-#define DISPLAY_SPI spi0
-#define DISPLAY_SPI_BAUD 8000000
-#define DISPLAY_SCL_PIN 6
-#define DISPLAY_SDA_PIN 7
-
-#define DISPLAY_CS_PIN 3
-#define DISPLAY_DC_PIN 4
-#define DISPLAY_RESET_PIN 5
-
-#define DISPLAY_FLIP_180 false
-
-
-// button inputs
-#define BUTTON_NAV_UP_PIN 2
-#define BUTTON_SELECT_PIN 1
-#define BUTTON_NAV_DOWN_PIN 0
+void button_set_callback(button_callback_t callback);
+void init_button();
 
