@@ -41,7 +41,7 @@ bool battery_stat_is_error(battery_stat_t* batt_stat) {
 
 
 bool battery_stat_is_expired(battery_stat_t* batt_stat) {
-    return batt_stat->last_updated + batt_stat->valid_for < time_us_64();
+    return batt_stat->last_updated == 0 || batt_stat->last_updated + batt_stat->valid_for < time_us_64();
 }
 
 
