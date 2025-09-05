@@ -23,17 +23,13 @@
  */
 #include "mitm.h"
 #include "status.h"
-#include "pico/stdlib.h"
-#include <stdio.h>
-#include "display.h"
-#include "button.h"
-
 #include "battery.h"
-#include "smbus.h"
-
+#include "defused/gui.h"
+#include "pico/stdlib.h"
+#include "pico/multicore.h"
+#include <stdio.h>
+/* 
 bool do_update = false;
-uint8_t button_down_ctrs[] = {0, 0, 0};
-uint8_t button_up_ctrs[] = {0, 0, 0};
 
 bool trigger_display_update(struct repeating_timer* t) {
     do_update = true;
@@ -102,49 +98,19 @@ void update_display() {
     display_printf("%03d %03d %03d\n", button_down_ctrs[0], button_down_ctrs[1], button_down_ctrs[2]);
     display_printf("%03d %03d %03d\n", button_up_ctrs[0], button_up_ctrs[1], button_up_ctrs[2]);
 
-}
-
-void button_callback(button_func_t function, button_event_t event) {
-    switch (event) {
-        case BUTTON_UP:
-            button_up_ctrs[function]++;
-            break;
-        case BUTTON_DOWN:
-        case BUTTON_DOWN_REPEAT:
-            button_down_ctrs[function]++;
-            break;
-        default:
-            break;
-    }
-    do_update = true;
-}
+} */
 
 int main() {
     stdio_init_all();
     init_status();
-    init_display();
     init_battery();
-    init_button();
-
-    button_set_callback(&button_callback);
     
-    display_set_text_position(1, 40);
-    display_set_text_color(COLOR_WHITE);
-    display_set_text_scale(2);
-    display_print("BattMITM");
-
-    display_set_burn_limits(5, 5);
-
-    struct repeating_timer display_update_timer;
-    add_repeating_timer_ms(2000, trigger_display_update, NULL, &display_update_timer);
+    multicore_reset_core1();
+    multicore_launch_core1(&init_gui);
 
     init_mitm();
     while (true) {
         mitm_loop();
         battery_update_cache();
-        if (do_update) {
-            do_update = false;
-            update_display();
-        }
     }
 }
