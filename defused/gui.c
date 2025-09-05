@@ -32,17 +32,76 @@ menu_binding_t* defused_current_binding = NULL;
 uint64_t defused_last_display_update = 0;
 bool defused_force_display_update = false;
 
+bool defused_pre_selecting = false;
+bool defused_long_selected = false;
+bool defused_long_select_captured = false;
+
 void button_callback(button_func_t function, button_event_t event) {
-    bool handled = defused_current_binding->on_button_event(function, event);
-    if (handled) return;
-    
-    switch (event) {
-        case BUTTON_UP:
-        case BUTTON_DOWN:
-        case BUTTON_DOWN_REPEAT:
+    if (defused_current_binding == NULL) return;
+    if (defused_current_binding->on_button_event(function, event)) return;
+
+    switch (function) {
+        case BUTTON_NAV_UP:
+            switch (event) {
+                case BUTTON_UP:
+                    break;
+                case BUTTON_DOWN:
+                case BUTTON_DOWN_REPEAT:
+                    if (defused_pre_selecting) {
+                        defused_pre_selecting = false;
+                        defused_current_binding->on_cancel_select();
+                    }
+                    defused_current_binding->on_nav_up();
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case BUTTON_SELECT:
+            switch (event) {
+                case BUTTON_UP:
+                    if (defused_long_selected && defused_long_select_captured) {
+                        defused_long_selected = false;
+                        break;
+                    }
+                    if (!defused_pre_selecting) break;
+                    defused_current_binding->on_select();
+                    break;
+                case BUTTON_DOWN:
+                    defused_pre_selecting = true;
+                    defused_current_binding->on_pre_select();
+                    break;
+                case BUTTON_DOWN_REPEAT:
+                    if (defused_long_selected) break;
+                    if (!defused_pre_selecting) break;
+                    defused_long_selected = true;
+                    defused_long_select_captured = defused_current_binding->on_select_held();
+                    if (defused_long_select_captured) defused_pre_selecting = false;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case BUTTON_NAV_DOWN:
+            switch (event) {
+                case BUTTON_UP:
+                    break;
+                case BUTTON_DOWN:
+                case BUTTON_DOWN_REPEAT:
+                    if (defused_pre_selecting) {
+                        defused_pre_selecting = false;
+                        defused_current_binding->on_cancel_select();
+                    }
+                    defused_current_binding->on_nav_down();
+                    break;
+                default:
+                    break;
+            }
+            break;
         default:
             break;
     }
+    
 }
 
 void defused_update_display_now() {
