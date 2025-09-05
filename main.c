@@ -47,41 +47,53 @@ void update_display() {
 
     display_set_contrast(0); // dimmest setting
     display_set_text_position(0, 14);
-    display_set_text_color(0xFFFF);
     display_set_text_scale(2);
     
     battery_stat_t* stat;
     stat = battery_get_stat(BATT_CMD_RELATIVE_STATE_OF_CHARGE);
-    if (battery_stat_is_expired(stat))
+    if (battery_stat_is_expired(stat)) {
+        display_set_text_color(COLOR_GRAY);
         display_print("loading...");
-    else if (battery_stat_is_error(stat))
+    } else if (battery_stat_is_error(stat)) {
+        display_set_text_color(COLOR_RED);
         display_print("error");
-    else 
+    } else {
+        display_set_text_color(COLOR_WHITE);
         display_printf("%d%%", *((uint16_t*) stat->cached_result));
+    }
 
     display_set_text_scale(1);
     display_print("\n");
 
     stat = battery_get_stat(BATT_CMD_VOLTAGE);
-    if (battery_stat_is_expired(stat))
+    if (battery_stat_is_expired(stat)) {
+        display_set_text_color(COLOR_GRAY);
         display_print("loading...");
-    else if (battery_stat_is_error(stat))
+    } else if (battery_stat_is_error(stat)) {
+        display_set_text_color(COLOR_RED);
         display_print("error");
-    else 
-        display_printf("%.3f V", (*((uint16_t*) stat->cached_result)) / 1000.0);
+    } else {
+        display_set_text_color(COLOR_GREEN);
+        display_printf("%.2f V", (*((uint16_t*) stat->cached_result)) / 1000.0);
+    }
 
-    display_print("\n");
+    display_print(" ");
 
     stat = battery_get_stat(BATT_CMD_CURRENT);
-    if (battery_stat_is_expired(stat))
+    if (battery_stat_is_expired(stat)) {
+        display_set_text_color(COLOR_GRAY);
         display_print("loading...");
-    else if (battery_stat_is_error(stat))
+    } else if (battery_stat_is_error(stat)) {
+        display_set_text_color(COLOR_RED);
         display_print("error");
-    else 
-        display_printf("%.3f A", (*((int16_t*) stat->cached_result)) / 1000.0);
+    } else {
+        display_set_text_color(COLOR_RED);
+        display_printf("%.2f A", (*((int16_t*) stat->cached_result)) / 1000.0);
+    }
 
     display_print("\n");
 
+    display_set_text_color(COLOR_GRAY);
     display_print(button_get_state(BUTTON_NAV_UP) == BUTTON_DOWN ? " D " : " U ");
     display_print(button_get_state(BUTTON_SELECT) == BUTTON_DOWN ? "  D " : "  U ");
     display_print(button_get_state(BUTTON_NAV_DOWN) == BUTTON_DOWN ? "  D " : "  U ");
@@ -117,7 +129,7 @@ int main() {
     button_set_callback(&button_callback);
     
     display_set_text_position(1, 40);
-    display_set_text_color(0xFFFF);
+    display_set_text_color(COLOR_WHITE);
     display_set_text_scale(2);
     display_print("BattMITM");
 

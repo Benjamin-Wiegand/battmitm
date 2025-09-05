@@ -24,6 +24,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// these are 16 bit colors, which is why the values look weird if you're used to 24-bit or 32-bit colors
+#define COLOR_WHITE 0xFFFF
+#define COLOR_GRAY 0x8410   // ~50%
+#define COLOR_BLACK 0x0000
+#define COLOR_RED 0xF800
+#define COLOR_GREEN 0x07E0
+#define COLOR_BLUE 0x001F
+
 #define DISPLAY_RESOLUTION_WIDTH 96
 #define DISPLAY_RESOLUTION_HEIGHT 64
 
