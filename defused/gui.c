@@ -29,13 +29,23 @@
 #include "config.h"
 
 
+// active menu
 menu_binding_t* defused_current_binding = NULL;
+
+// inactive mode (aod)
 uint64_t defused_last_interaction = 0;
 bool defused_inactive_mode = false;
 
+// contrast attenuation
+uint8_t defused_contrast_current = DISPLAY_CONTRAST;
+uint8_t defused_contrast_target = DISPLAY_CONTRAST;
+uint64_t defused_contrast_last_attenuated = 0;
+
+// display updates
 uint64_t defused_last_display_update = 0;
 bool defused_force_display_update = false;
 
+// select button state
 bool defused_pre_selecting = false;
 bool defused_long_selected = false;
 bool defused_long_select_captured = false;
@@ -127,6 +137,7 @@ void defused_bind(menu_binding_t* binding) {
 bool defused_enter_inactive_mode() {
     if (defused_inactive_mode) return false;
     defused_inactive_mode = true;
+    defused_attenuate_contrast(DISPLAY_CONTRAST_INACTIVE);
     defused_bind(bind_aod());
     return true;
 }
@@ -135,9 +146,14 @@ bool defused_exit_inactive_mode() {
     if (!defused_inactive_mode) return false;
     defused_last_interaction = time_us_64();
     defused_inactive_mode = false;
-    display_set_contrast(255);
+    defused_attenuate_contrast(DISPLAY_CONTRAST);
     defused_bind(bind_stat_browser());
     return true;
+}
+
+
+void defused_attenuate_contrast(uint8_t target) {
+    defused_contrast_target = target;
 }
 
 
@@ -154,6 +170,13 @@ void defused_loop() {
         defused_current_binding->update_display();
         defused_last_display_update = timestamp;
     }
+    
+    if (defused_contrast_current != defused_contrast_target && defused_contrast_last_attenuated + DISPLAY_CONTRAST_ATTENUATION_INTERVAL < timestamp ) {
+        defused_contrast_last_attenuated = timestamp;
+        if (defused_contrast_current > defused_contrast_target) defused_contrast_current--;
+        else defused_contrast_current++;
+        display_set_contrast(defused_contrast_current);
+    }
 }
 
 void init_gui() {
@@ -162,6 +185,7 @@ void init_gui() {
 
     button_set_callback(&button_callback);
 
+    display_set_contrast(defused_contrast_current);
     display_set_text_position(1, 40);
     display_set_text_color(COLOR_WHITE);
     display_set_text_scale(2);

@@ -23,6 +23,9 @@
  */
 // the gui is codename "defused" because I think it's funny
 
+#define DISPLAY_CONTRAST_ATTENUATION_INTERVAL 5000      // in microseconds
+
+
 #ifndef MENU_BINDING_DEF
 #define MENU_BINDING_DEF
 
@@ -61,5 +64,7 @@ void defused_bind(menu_binding_t* binding);
 
 bool defused_enter_inactive_mode();
 bool defused_exit_inactive_mode();
+
+void defused_attenuate_contrast(uint8_t target);
 
 void init_gui();

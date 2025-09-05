@@ -113,8 +113,6 @@ void defused_aod_update_display() {
 }
 
 void defused_aod_init() {
-    display_set_contrast(0);
-
     aod_charge = battery_get_stat(BATT_CMD_RELATIVE_STATE_OF_CHARGE);
     aod_voltage = battery_get_stat(BATT_CMD_VOLTAGE);
     aod_current = battery_get_stat(BATT_CMD_CURRENT);
