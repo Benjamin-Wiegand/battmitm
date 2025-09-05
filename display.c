@@ -41,10 +41,13 @@
 #define DISPLAY_CMD_DRAW_RECTANGLE 0x22
 #define DISPLAY_CMD_COPY 0x23
 #define DISPLAY_CMD_FILL 0x26
+#define DISPLAY_CMD_CLEAR_WINDOW 0x25
 
 
 bool display_cs_state = 0;
 bool display_dc_state = 0;
+
+bool display_rect_fill_mode = false;
 
 // burn-in protection
 uint8_t burn_limit_x = 0;
@@ -113,6 +116,8 @@ uint8_t rgb565_blue(uint16_t color16) {
 }
 
 void display_set_rectangle_fill(bool enabled) {
+    if (display_rect_fill_mode == enabled) return;
+    display_rect_fill_mode = enabled;
     display_send_cmd(DISPLAY_CMD_FILL);
     display_send_cmd(enabled);
 }
@@ -183,6 +188,13 @@ void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x
         dest_y + burn_offset_y);
 }
 
+void display_clear() {
+    bool old_fill_mode = display_rect_fill_mode;
+    display_set_rectangle_fill(true);
+    display_draw_rectangle_internal(0, 0, DISPLAY_RESOLUTION_WIDTH - 1, DISPLAY_RESOLUTION_HEIGHT - 1, 0, 0);
+    display_set_rectangle_fill(old_fill_mode);
+}
+
 void display_shift(int x, int y, uint16_t negative_color) {
     if (x == 0 && y == 0) return;
     uint x_offset, y_offset;
@@ -197,12 +209,15 @@ void display_shift(int x, int y, uint16_t negative_color) {
 
     display_copy_internal(x_start, y_start, 95, 63, x_offset, y_offset);
 
+    bool old_fill_mode = display_rect_fill_mode;
     display_set_rectangle_fill(true);
+
     if (x < 0) display_draw_rectangle_internal(96 - x_start, 0, 95, 63, negative_color, negative_color);
     else if (x > 0) display_draw_rectangle_internal(0, 0, x_offset - 1, 63, negative_color, negative_color);
     if (y < 0) display_draw_rectangle_internal(0, 63 - y_start, 95, 63, negative_color, negative_color);
     else if (y > 0) display_draw_rectangle_internal(0, 0, 95, y_offset - 1, negative_color, negative_color);
 
+    display_set_rectangle_fill(old_fill_mode);
 }
 
 
@@ -369,7 +384,6 @@ void init_display() {
     display_send_cmd(DISPLAY_CMD_DISPLAY_ON);
 
     // clear framebuffer
-    display_set_rectangle_fill(true);
-    display_draw_rectangle(0, 0, 95, 63, 0, 0);
+    display_clear();
 }
 

@@ -43,11 +43,8 @@ bool trigger_display_update(struct repeating_timer* t) {
 void update_display() {
     display_burn_update(false);
 
-    // clear
-    display_set_rectangle_fill(true);
-    display_draw_rectangle(0, 0, 95, 63, 0, 0);
+    display_clear();
 
-    // new text
     display_set_text_position(0, 14);
     display_set_text_color(rgb888_to_565(0x101010)); //todo
     display_set_text_scale(2);

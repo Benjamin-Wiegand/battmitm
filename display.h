@@ -36,6 +36,7 @@ void display_draw_char(uint8_t x_offset, uint8_t y_offset, uint8_t scale_factor,
 void display_draw_pixel(uint8_t x, uint8_t y, uint16_t color);
 
 void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y);
+void display_clear();
 
 void display_burn_update(bool shift_content);
 void display_set_burn_limits(uint8_t x_limit, uint8_t y_limit);
