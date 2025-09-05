@@ -60,11 +60,13 @@ battery_stat_t* battery_get_stat(uint8_t cmd) {
     battery_stat_t* batt_stat;
     for (int i = 0; i < battery_stat_cache_size; i++) {
         batt_stat = &battery_stat_cache[i];
-        if (batt_stat->read_command != cmd) continue;
-        batt_stat->update_requested = true;
-        battery_stat_need_cache_update = true;
-        return batt_stat;
+        if (batt_stat->read_command == cmd) return batt_stat;
     }
+}
+
+void battery_stat_request_update(battery_stat_t* batt_stat) {
+    batt_stat->update_requested = true;
+    battery_stat_need_cache_update = true;
 }
 
 
@@ -88,13 +90,13 @@ void battery_update_cache() {
 
         switch (batt_stat->type) {
             case SBS_BYTES:
-                ret = smbus_read(bms, batt_stat->read_command, batt_stat->cached_result, batt_stat->max_result_length);
+                ret = smbus_read(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
                 break;
             case SBS_BLOCK:
-                ret = smbus_read_block(bms, batt_stat->read_command, batt_stat->cached_result, batt_stat->max_result_length);
+                ret = smbus_read_block(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
                 break;
             case SBS_STRING:
-                ret = smbus_read_text(bms, batt_stat->read_command, batt_stat->cached_result, batt_stat->max_result_length);
+                ret = smbus_read_text(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
                 break;
             default:
                 continue;
@@ -116,6 +118,9 @@ void battery_update_cache() {
 
 
 battery_stat_t create_battery_stat(uint8_t cmd, char* friendly_name, uint8_t max_result_length, battery_stat_type_t type, uint32_t valid_for) {
+    battery_response_t result;
+    result.as_uint8 = malloc(max_result_length);
+
     battery_stat_t batt_stat = {
         read_command: cmd,
         friendly_name: friendly_name,
@@ -123,7 +128,7 @@ battery_stat_t create_battery_stat(uint8_t cmd, char* friendly_name, uint8_t max
         valid_for: valid_for,
         type: type,
 
-        cached_result: malloc(max_result_length),
+        cached_result: result,
         result_length: 0,
         result_valid: false,
         last_updated: 0,

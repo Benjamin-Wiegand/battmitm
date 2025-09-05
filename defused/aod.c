@@ -25,6 +25,12 @@
 #include "display.h"
 #include "battery.h"
 
+battery_stat_t* aod_charge;
+battery_stat_t* aod_voltage;
+battery_stat_t* aod_current;
+battery_stat_t* aod_remaining_capacity;
+
+
 bool defused_aod_on_button_event(button_func_t function, button_event_t event) { return true; }
 
 void defused_aod_on_nav_up() {}
@@ -34,60 +40,72 @@ void defused_aod_on_cancel_select() {}
 void defused_aod_on_select() {}
 bool defused_aod_on_select_held() { return false; }
 
+void aod_update_stats() {
+    battery_stat_request_update(aod_charge);
+    battery_stat_request_update(aod_voltage);
+    battery_stat_request_update(aod_current);
+    battery_stat_request_update(aod_remaining_capacity);
+}
+
+bool aod_print_stat_error(battery_stat_t* stat) {
+    if (battery_stat_is_expired(stat)) {
+        display_set_text_color(COLOR_GRAY);
+        display_print("...");
+        return true;
+    } else if (battery_stat_is_error(stat)) {
+        display_set_text_color(COLOR_RED);
+        display_print("error");
+        return true;
+    }
+    return false;
+}
 
 void defused_aod_update_display() {
+    float current;
+    float voltage;
+    aod_update_stats();
 
     display_burn_update(false);
     
     display_clear();
 
     battery_stat_lock();
-    battery_stat_t* stat;
 
-    display_set_text_position(0, 36);
+    display_set_text_position(0, 24);
     display_set_text_scale(2);
 
-    stat = battery_get_stat(BATT_CMD_RELATIVE_STATE_OF_CHARGE);
-    if (battery_stat_is_expired(stat)) {
-        display_set_text_color(COLOR_GRAY);
-        display_print("...");
-    } else if (battery_stat_is_error(stat)) {
-        display_set_text_color(COLOR_RED);
-        display_print("error");
-    } else {
+    if (!aod_print_stat_error(aod_charge)) {
         display_set_text_color(COLOR_WHITE);
-        display_printf("%d%%", *((uint16_t*) stat->cached_result));
+        display_printf("%d%%", *aod_charge->cached_result.as_uint16);
+    }
+    
+    display_set_text_position(0, 34);
+    display_set_text_scale(1);
+
+    if (!aod_print_stat_error(aod_remaining_capacity)) {
+        display_set_text_color(COLOR_GRAY);
+        display_printf("%.2f Wh", (*aod_remaining_capacity->cached_result.as_uint16) / 100.0);
     }
 
-    display_set_text_position(0, 45);
-    display_set_text_scale(1);
-    display_print("\n");
+    display_set_text_position(0, 54);
 
-    stat = battery_get_stat(BATT_CMD_VOLTAGE);
-    if (battery_stat_is_expired(stat)) {
-        display_set_text_color(COLOR_GRAY);
-        display_print("...");
-    } else if (battery_stat_is_error(stat)) {
-        display_set_text_color(COLOR_RED);
-        display_print("error");
-    } else {
+    if (!aod_print_stat_error(aod_voltage)) {
         display_set_text_color(COLOR_GREEN);
-        display_printf("%.2f V", (*((uint16_t*) stat->cached_result)) / 1000.0);
+        voltage = (*aod_voltage->cached_result.as_uint16) / 1000.0;
+        if (voltage < 10.0) display_print(" ");
+        display_printf("%.2f V", voltage);
     }
 
     display_print(" ");
 
-    stat = battery_get_stat(BATT_CMD_CURRENT);
-    if (battery_stat_is_expired(stat)) {
-        display_set_text_color(COLOR_GRAY);
-        display_print("...");
-    } else if (battery_stat_is_error(stat)) {
+    if (!aod_print_stat_error(aod_current)) {
         display_set_text_color(COLOR_RED);
-        display_print("error");
-    } else {
-        display_set_text_color(COLOR_RED);
-        display_printf("%.2f A", (*((int16_t*) stat->cached_result)) / 1000.0);
+        current = (*aod_current->cached_result.as_int16) / 1000.0;
+        if (current >= 0.0) display_print("+");
+        display_printf("%.2f A", current);
     }
+
+
 
     battery_stat_unlock();
 
@@ -96,6 +114,13 @@ void defused_aod_update_display() {
 
 void defused_aod_init() {
     display_set_contrast(0);
+
+    aod_charge = battery_get_stat(BATT_CMD_RELATIVE_STATE_OF_CHARGE);
+    aod_voltage = battery_get_stat(BATT_CMD_VOLTAGE);
+    aod_current = battery_get_stat(BATT_CMD_CURRENT);
+    aod_remaining_capacity = battery_get_stat(BATT_CMD_REMAINING_CAPACITY);
+    
+    aod_update_stats();
 }
 
 

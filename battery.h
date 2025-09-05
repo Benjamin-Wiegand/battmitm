@@ -79,6 +79,15 @@ enum battery_stat_type {
 
 typedef enum battery_stat_type battery_stat_type_t;
 
+union battery_response {
+    uint16_t* as_uint16;
+    uint8_t* as_uint8;
+    int16_t* as_int16;
+    char* as_string;
+};
+
+typedef union battery_response battery_response_t;
+
 struct battery_stat {
     uint8_t read_command;
     char* friendly_name;
@@ -86,7 +95,7 @@ struct battery_stat {
     uint32_t valid_for;
     battery_stat_type_t type;
 
-    void* cached_result;
+    battery_response_t cached_result;
     uint8_t result_length;
     bool result_valid;
     uint64_t last_updated;
@@ -97,15 +106,24 @@ struct battery_stat {
 typedef struct battery_stat battery_stat_t;
 
 // IMPORTANT:
-// - never call anything here in an interrupt handler (it uses unsafe locks)
-// - if calling from core 1 acquire a lock
+// - listen to the warnings in the comments below when calling these functions
+// - accessing the battery_stat struct from core1 safely requires a lock
 // - make it quick, long locks will delay comms between the laptop and battery and could cause problems
 
+// only use these on core1, never in an interrupt
+// (doesn't apply to internal functions)
 void battery_stat_lock();
 void battery_stat_unlock();
+
+// needs lock (on core1)
 bool battery_stat_is_error(battery_stat_t* batt_stat);
 bool battery_stat_is_expired(battery_stat_t* batt_stat);
-battery_stat_t* battery_get_stat(uint8_t cmd);
+
+// thread safe (ish)
+battery_stat_t* battery_get_stat(uint8_t cmd);  // note: the struct at the pointer is not thread-safe!
+void battery_stat_request_update(battery_stat_t* batt_stat);
+
+// only call from core0, never in an interrupt
 void battery_update_cache();
 
 void init_battery();
