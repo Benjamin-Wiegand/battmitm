@@ -176,8 +176,8 @@ void display_copy_internal(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8
 	display_send_cmd(x2);
 	display_send_cmd(y2);
     
-    display_send_cmd(dest_x + burn_offset_x);
-    display_send_cmd(dest_y + burn_offset_y);
+    display_send_cmd(dest_x);
+    display_send_cmd(dest_y);
     sleep_ms(1);
 }
 
