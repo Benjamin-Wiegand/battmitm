@@ -34,6 +34,9 @@
 #define DISPLAY_CMD_ROW_ADDRESS 0x75
 #define DISPLAY_CMD_COLUMN_ADDRESS 0x15
 #define DISPLAY_CMD_REMAP_AND_DATA_FORMAT 0xA0
+#define DISPLAY_CMD_CONTRAST_A 0x81
+#define DISPLAY_CMD_CONTRAST_B 0x82
+#define DISPLAY_CMD_CONTRAST_C 0x83
 #define DISPLAY_CMD_DISPLAY_ON 0xAF
 #define DISPLAY_CMD_DISPLAY_OFF 0xAE
 
@@ -193,6 +196,18 @@ void display_clear() {
     display_set_rectangle_fill(true);
     display_draw_rectangle_internal(0, 0, DISPLAY_RESOLUTION_WIDTH - 1, DISPLAY_RESOLUTION_HEIGHT - 1, 0, 0);
     display_set_rectangle_fill(old_fill_mode);
+}
+
+// sets display contrast for all 3 colors
+void display_set_contrast(uint8_t contrast) {
+    display_send_cmd(DISPLAY_CMD_CONTRAST_A);
+    display_send_cmd(contrast);
+
+    display_send_cmd(DISPLAY_CMD_CONTRAST_B);
+    display_send_cmd(contrast);
+
+    display_send_cmd(DISPLAY_CMD_CONTRAST_C);
+    display_send_cmd(contrast);
 }
 
 void display_shift(int x, int y, uint16_t negative_color) {

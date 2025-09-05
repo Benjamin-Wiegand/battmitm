@@ -45,8 +45,9 @@ void update_display() {
 
     display_clear();
 
+    display_set_contrast(0); // dimmest setting
     display_set_text_position(0, 14);
-    display_set_text_color(rgb888_to_565(0x101010)); //todo
+    display_set_text_color(0xFFFF);
     display_set_text_scale(2);
     
     battery_stat_t* stat;
