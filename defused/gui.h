@@ -22,9 +22,12 @@
     IN THE SOFTWARE.
  */
 // the gui is codename "defused" because I think it's funny
-#include "button.h"
+
+#ifndef MENU_BINDING_DEF
+#define MENU_BINDING_DEF
+
 #include "pico/stdlib.h"
-#include <stdbool.h>
+#include "button.h"
 
 struct menu_binding {
     uint64_t display_update_interval;
@@ -49,5 +52,11 @@ struct menu_binding {
 };
 
 typedef struct menu_binding menu_binding_t;
+
+#endif
+
+void defused_update_display_now();
+
+void defused_bind(menu_binding_t* binding);
 
 void init_gui();

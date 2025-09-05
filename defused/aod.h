@@ -21,25 +21,7 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
-#include "mitm.h"
-#include "status.h"
-#include "battery.h"
 #include "defused/gui.h"
-#include "pico/stdlib.h"
-#include "pico/multicore.h"
-#include <stdio.h>
 
-int main() {
-    stdio_init_all();
-    init_status();
-    init_battery();
-    
-    multicore_reset_core1();
-    multicore_launch_core1(&init_gui);
+menu_binding_t* bind_aod();
 
-    init_mitm();
-    while (true) {
-        mitm_loop();
-        battery_update_cache();
-    }
-}

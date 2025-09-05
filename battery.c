@@ -24,16 +24,26 @@
 #include "battery.h"
 #include "config.h"
 #include "smbus.h"
+#include "hardware/sync.h"
 #include "pico/stdlib.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 
-
 bool battery_stat_need_cache_update = false;
+
+spin_lock_t* battery_stat_cache_lock;
 battery_stat_t* battery_stat_cache;
 size_t battery_stat_cache_size;
 
+
+void battery_stat_lock() {
+    spin_lock_unsafe_blocking(battery_stat_cache_lock);
+}
+
+void battery_stat_unlock() {
+    spin_unlock_unsafe(battery_stat_cache_lock);
+}
 
 bool battery_stat_is_error(battery_stat_t* batt_stat) {
     return !batt_stat->result_valid;
@@ -60,6 +70,9 @@ battery_stat_t* battery_get_stat(uint8_t cmd) {
 
 void battery_update_cache() {
     if (!battery_stat_need_cache_update) return;
+    
+    battery_stat_lock();
+
     battery_stat_need_cache_update = false;
 
     i2c_dev_t* bms = get_bms_dev();
@@ -97,6 +110,8 @@ void battery_update_cache() {
         
         batt_stat->last_updated = time_us_64();
     }
+
+    battery_stat_unlock();
 }
 
 
@@ -163,4 +178,6 @@ void init_battery() {
     for (int i = 0; i < battery_stat_cache_size; i++) {
         battery_stat_cache[i] = battery_stat_cache_init[i];
     }
+
+    battery_stat_cache_lock = spin_lock_instance(spin_lock_claim_unused(true));
 }

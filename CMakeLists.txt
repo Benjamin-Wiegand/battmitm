@@ -46,6 +46,7 @@ add_executable(BattMITM_2.0
         battery.c 
         button.c
         defused/gui.c
+        defused/aod.c
 )
 
 pico_set_program_name(BattMITM_2.0 "BattMITM_2.0")

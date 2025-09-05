@@ -24,10 +24,18 @@
 // the gui is codename "defused" because I think it's funny
 #include "defused/gui.h"
 #include "display.h"
+#include "aod.h"
 
-struct repeating_timer display_update_timer;
+
+menu_binding_t* defused_current_binding = NULL;
+
+uint64_t defused_last_display_update = 0;
+bool defused_force_display_update = false;
 
 void button_callback(button_func_t function, button_event_t event) {
+    bool handled = defused_current_binding->on_button_event(function, event);
+    if (handled) return;
+    
     switch (event) {
         case BUTTON_UP:
         case BUTTON_DOWN:
@@ -37,12 +45,26 @@ void button_callback(button_func_t function, button_event_t event) {
     }
 }
 
-bool display_update_handler(struct repeating_timer* t) {
-
+void defused_update_display_now() {
+    defused_force_display_update = true;
 }
 
-void defused_set_display_update_interval(uint64_t interval) {
-    add_repeating_timer_us(interval, display_update_handler, NULL, &display_update_timer);
+void defused_bind(menu_binding_t* binding) {
+    defused_current_binding = binding;
+    display_set_burn_limits(binding->burn_margin_x, binding->burn_margin_y);
+    defused_current_binding->init();
+}
+
+
+void defused_loop() {
+    if (defused_current_binding == NULL) return;
+    uint64_t timestamp = time_us_64();
+
+    if (defused_force_display_update || defused_last_display_update + defused_current_binding->display_update_interval < timestamp) {
+        defused_force_display_update = false;
+        defused_current_binding->update_display();
+        defused_last_display_update = timestamp;
+    }
 }
 
 void init_gui() {
@@ -59,5 +81,8 @@ void init_gui() {
     sleep_ms(2000);
     
     display_clear();
-
+    
+    defused_bind(bind_aod());
+    
+    while (true) defused_loop();
 }

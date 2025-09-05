@@ -96,7 +96,13 @@ struct battery_stat {
 
 typedef struct battery_stat battery_stat_t;
 
+// IMPORTANT:
+// - never call anything here in an interrupt handler (it uses unsafe locks)
+// - if calling from core 1 acquire a lock
+// - make it quick, long locks will delay comms between the laptop and battery and could cause problems
 
+void battery_stat_lock();
+void battery_stat_unlock();
 bool battery_stat_is_error(battery_stat_t* batt_stat);
 bool battery_stat_is_expired(battery_stat_t* batt_stat);
 battery_stat_t* battery_get_stat(uint8_t cmd);
