@@ -54,6 +54,10 @@ bool battery_stat_is_expired(battery_stat_t* batt_stat) {
     return batt_stat->last_updated == 0 || batt_stat->last_updated + batt_stat->valid_for < time_us_64();
 }
 
+bool battery_stat_is_valid(battery_stat_t* batt_stat) {
+    return !battery_stat_is_error(batt_stat) && !battery_stat_is_expired(batt_stat);
+}
+
 
 battery_stat_t* battery_get_stat(uint8_t cmd) {
     // todo: this can be optimized

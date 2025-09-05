@@ -118,6 +118,7 @@ void battery_stat_unlock();
 // needs lock (on core1)
 bool battery_stat_is_error(battery_stat_t* batt_stat);
 bool battery_stat_is_expired(battery_stat_t* batt_stat);
+bool battery_stat_is_valid(battery_stat_t* batt_stat);  // true if the previous 2 are false
 
 // thread safe (ish)
 battery_stat_t* battery_get_stat(uint8_t cmd);  // note: the struct at the pointer is not thread-safe!

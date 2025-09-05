@@ -23,8 +23,9 @@
  */
 // the gui is codename "defused" because I think it's funny
 #include "defused/gui.h"
+#include "defused/aod.h"
+#include "defused/stat_browser.h"
 #include "display.h"
-#include "aod.h"
 #include "config.h"
 
 
@@ -41,10 +42,8 @@ bool defused_long_select_captured = false;
 
 void button_callback(button_func_t function, button_event_t event) {
     defused_last_interaction = time_us_64();
-    if (defused_inactive_mode) {
-        defused_inactive_mode = false;
-        display_set_contrast(255);  //todo: bind main menu
-    }
+    if (event == BUTTON_DOWN && defused_exit_inactive_mode()) return;
+    
     if (defused_current_binding == NULL) return;
     if (defused_current_binding->on_button_event(function, event)) return;
 
@@ -77,6 +76,7 @@ void button_callback(button_func_t function, button_event_t event) {
                     break;
                 case BUTTON_DOWN:
                     defused_pre_selecting = true;
+                    defused_long_selected = false;
                     defused_current_binding->on_pre_select();
                     break;
                 case BUTTON_DOWN_REPEAT:
@@ -124,14 +124,29 @@ void defused_bind(menu_binding_t* binding) {
     defused_update_display_now();
 }
 
+bool defused_enter_inactive_mode() {
+    if (defused_inactive_mode) return false;
+    defused_inactive_mode = true;
+    defused_bind(bind_aod());
+    return true;
+}
+
+bool defused_exit_inactive_mode() {
+    if (!defused_inactive_mode) return false;
+    defused_last_interaction = time_us_64();
+    defused_inactive_mode = false;
+    display_set_contrast(255);
+    defused_bind(bind_stat_browser());
+    return true;
+}
+
 
 void defused_loop() {
     if (defused_current_binding == NULL) return;
     uint64_t timestamp = time_us_64();
 
     if (!defused_inactive_mode && defused_last_interaction + DISPLAY_INACTIVITY_TIMEOUT < timestamp) {
-        defused_inactive_mode = true;
-        defused_bind(bind_aod());
+        defused_enter_inactive_mode();
     }
 
     if (defused_force_display_update || defused_last_display_update + defused_current_binding->display_update_interval < timestamp) {
@@ -156,7 +171,7 @@ void init_gui() {
     
     display_clear();
     
-    defused_bind(bind_aod());
+    defused_bind(bind_stat_browser());
     
     while (true) defused_loop();
 }

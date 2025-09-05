@@ -21,45 +21,7 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
-// the gui is codename "defused" because I think it's funny
+#include "defused/gui.h"
 
-#ifndef MENU_BINDING_DEF
-#define MENU_BINDING_DEF
+menu_binding_t* bind_stat_browser();
 
-#include "pico/stdlib.h"
-#include "button.h"
-
-struct menu_binding {
-    uint64_t display_update_interval;
-    uint8_t burn_margin_x;
-    uint8_t burn_margin_y;
-
-    // returning true will "capture" the event and not propagate to on_navigate or on_select
-    bool (*on_button_event)(button_func_t function, button_event_t event);
-
-    void (*on_nav_up)();
-    void (*on_nav_down)();
-    void (*on_pre_select)();
-    void (*on_cancel_select)();
-    void (*on_select)();
-    
-    // return false if no action, and releasing will call on_select
-    bool (*on_select_held)();
-
-    void (*update_display)();
-    
-    void (*init)();
-};
-
-typedef struct menu_binding menu_binding_t;
-
-#endif
-
-void defused_update_display_now();
-
-void defused_bind(menu_binding_t* binding);
-
-bool defused_enter_inactive_mode();
-bool defused_exit_inactive_mode();
-
-void init_gui();

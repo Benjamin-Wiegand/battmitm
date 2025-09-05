@@ -47,6 +47,7 @@ add_executable(BattMITM_2.0
         button.c
         defused/gui.c
         defused/aod.c
+        defused/stat_browser.c
 )
 
 pico_set_program_name(BattMITM_2.0 "BattMITM_2.0")
