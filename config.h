@@ -62,6 +62,8 @@
 
 #define DISPLAY_FLIP_180 false
 
+#define DISPLAY_BURN_SHIFT_MIN_INTERVAL 10000000    // in microseconds
+
 
 // button inputs
 #define BUTTON_NAV_UP_PIN 2

@@ -21,11 +21,12 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
-
+#include "display.h"
 #include "font.h"
 #include "config.h"
 #include "hardware/spi.h"
 #include "pico/stdlib.h"
+#include "pico/rand.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -45,6 +46,14 @@
 bool display_cs_state = 0;
 bool display_dc_state = 0;
 
+// burn-in protection
+uint8_t burn_limit_x = 0;
+uint8_t burn_limit_y = 0;
+uint8_t burn_offset_x = 0;
+uint8_t burn_offset_y = 0;
+uint64_t burn_last_updated = 0;
+
+// text rendering
 uint8_t text_start_x = 0;
 uint8_t text_pos_x = 0;
 uint8_t text_pos_y = FONT_HEIGHT;
@@ -108,7 +117,7 @@ void display_set_rectangle_fill(bool enabled) {
     display_send_cmd(enabled);
 }
 
-void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t stroke_color, uint16_t fill_color) {
+void display_draw_rectangle_internal(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t stroke_color, uint16_t fill_color) {
 	display_send_cmd(DISPLAY_CMD_DRAW_RECTANGLE);
 
 	display_send_cmd(x1);
@@ -126,13 +135,23 @@ void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint
     sleep_ms(1);
 }
 
+void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t stroke_color, uint16_t fill_color) {
+    display_draw_rectangle_internal(
+        x1 + burn_offset_x, 
+        y1 + burn_offset_y, 
+        x2 + burn_offset_x, 
+        y2 + burn_offset_y, 
+        stroke_color, fill_color);
+    
+}
+
 void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color) {
 	display_send_cmd(DISPLAY_CMD_DRAW_LINE);
 
-	display_send_cmd(x1);
-	display_send_cmd(y1);
-	display_send_cmd(x2);
-	display_send_cmd(y2);
+	display_send_cmd(x1 + burn_offset_x);
+	display_send_cmd(y1 + burn_offset_y);
+	display_send_cmd(x2 + burn_offset_x);
+	display_send_cmd(y2 + burn_offset_y);
 
     display_send_cmd(rgb565_red(color));
     display_send_cmd(rgb565_green(color));
@@ -141,7 +160,7 @@ void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t 
 }
 
 
-void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y) {
+void display_copy_internal(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y) {
     display_send_cmd(DISPLAY_CMD_COPY);
 
 	display_send_cmd(x1);
@@ -149,12 +168,23 @@ void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x
 	display_send_cmd(x2);
 	display_send_cmd(y2);
     
-    display_send_cmd(dest_x);
-    display_send_cmd(dest_y);
+    display_send_cmd(dest_x + burn_offset_x);
+    display_send_cmd(dest_y + burn_offset_y);
     sleep_ms(1);
 }
 
+void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y) {
+    display_copy_internal(
+        x1 + burn_offset_x, 
+        y1 + burn_offset_y, 
+        x2 + burn_offset_x, 
+        y2 + burn_offset_y, 
+        dest_x + burn_offset_x, 
+        dest_y + burn_offset_y);
+}
+
 void display_shift(int x, int y, uint16_t negative_color) {
+    if (x == 0 && y == 0) return;
     uint x_offset, y_offset;
     uint8_t x_start, y_start;
     if (x > 95 || x < -95) x %= 96;
@@ -165,14 +195,56 @@ void display_shift(int x, int y, uint16_t negative_color) {
     x_offset = x < 0 ? 0 : x;
     y_offset = y < 0 ? 0 : y;
 
-    display_copy(x_start, y_start, 95, 63, x_offset, y_offset);
+    display_copy_internal(x_start, y_start, 95, 63, x_offset, y_offset);
 
     display_set_rectangle_fill(true);
-    if (x < 0) display_draw_rectangle(96 - x_start, 0, 95, 63, negative_color, negative_color);
-    else if (x > 0) display_draw_rectangle(0, 0, x_offset - 1, 63, negative_color, negative_color);
-    if (y < 0) display_draw_rectangle(0, 63 - y_start, 95, 63, negative_color, negative_color);
-    else if (y > 0) display_draw_rectangle(0, 0, 95, y_offset - 1, negative_color, negative_color);
+    if (x < 0) display_draw_rectangle_internal(96 - x_start, 0, 95, 63, negative_color, negative_color);
+    else if (x > 0) display_draw_rectangle_internal(0, 0, x_offset - 1, 63, negative_color, negative_color);
+    if (y < 0) display_draw_rectangle_internal(0, 63 - y_start, 95, 63, negative_color, negative_color);
+    else if (y > 0) display_draw_rectangle_internal(0, 0, 95, y_offset - 1, negative_color, negative_color);
 
+}
+
+
+// update burn-in reduction offset (if it's time)
+// if shift_content is true, the display framebuffer will automatically be moved to the new offset
+void display_burn_update(bool shift_content) {
+    uint64_t timestamp = time_us_64();
+    if (burn_last_updated + DISPLAY_BURN_SHIFT_MIN_INTERVAL > timestamp) return;
+    burn_last_updated = timestamp;
+
+    int shift_x = (get_rand_32() % 3) - 1;
+    if (burn_limit_x == 0) shift_x = 0;
+    if (burn_offset_x == 0 && shift_x < 0) shift_x *= -1;
+    if (burn_offset_x >= burn_limit_x && shift_x > 0) shift_x *= -1;
+
+    int shift_y = (get_rand_32() % 3) - 1;
+    if (burn_limit_y == 0) shift_y = 0;
+    if (burn_offset_y == 0 && shift_y < 0) shift_y *= -1;
+    if (burn_offset_y >= burn_limit_y && shift_y > 0) shift_y *= -1;
+    
+    burn_offset_x += shift_x;
+    burn_offset_y += shift_y;
+    
+    if (shift_content) display_shift(shift_x, shift_y, 0);
+}
+
+// set maximum offset for burn-in reduction
+void display_set_burn_limits(uint8_t x_limit, uint8_t y_limit) {
+    burn_limit_x = x_limit;
+    burn_limit_y = y_limit;
+    if (burn_offset_x > x_limit) burn_offset_x = x_limit;
+    if (burn_offset_y > y_limit) burn_offset_y = y_limit;
+}
+
+// width of usable display area (accounting for burn limits)
+uint8_t display_area_width() {
+    return DISPLAY_RESOLUTION_WIDTH - burn_limit_x;
+}
+
+// height of usable display area (accounting for burn limits)
+uint8_t display_area_height() {
+    return DISPLAY_RESOLUTION_HEIGHT - burn_limit_y;
 }
 
 
@@ -188,7 +260,6 @@ void set_display_address_window(uint8_t x, uint8_t y, uint8_t width, uint8_t hei
 
 
 void draw_char(uint8_t x_pos, uint8_t y_pos, uint8_t scale_factor, uint16_t color, char c) {
-    uint8_t color_bytes[2] = {color >> 8, color & 0xFF};
     uint8_t* char_data = font_get_char(c);
     uint i;
 
@@ -202,11 +273,10 @@ void draw_char(uint8_t x_pos, uint8_t y_pos, uint8_t scale_factor, uint16_t colo
             if (!((char_data[i / 8] >> (7 - i % 8)) & 1)) continue;
 
             for (uint j = 0; j < scale_factor * scale_factor; j++) {
-                set_display_address_window(
+                display_draw_pixel(
                     x_pos + x * scale_factor + j % scale_factor, 
                     y_pos + y * scale_factor + j / scale_factor, 
-                    1, 1);
-                display_send_buffer(color_bytes, 2);
+                    color);
             }
         }
     }
@@ -214,7 +284,7 @@ void draw_char(uint8_t x_pos, uint8_t y_pos, uint8_t scale_factor, uint16_t colo
 
 void display_draw_pixel(uint8_t x, uint8_t y, uint16_t color) {
     uint8_t color_bytes[2] = {color >> 8, color & 0xFF};
-    set_display_address_window(x, y, 1, 1); 
+    set_display_address_window(x + burn_offset_x, y + burn_offset_y, 1, 1); 
     display_send_buffer(color_bytes, 2);
 }
 

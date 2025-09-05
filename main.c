@@ -28,15 +28,10 @@
 #include "display.h"
 #include "button.h"
 
-#include "pico/rand.h"
 #include "battery.h"
 #include "smbus.h"
 
-#include "config.h"
-
 bool do_update = false;
-uint8_t burn_offset_x = 0;
-uint8_t burn_offset_y = 0;
 uint8_t button_down_ctrs[] = {0, 0, 0};
 uint8_t button_up_ctrs[] = {0, 0, 0};
 
@@ -45,19 +40,15 @@ bool trigger_display_update(struct repeating_timer* t) {
     return true;
 }
 
-bool update_burn_offset(struct repeating_timer* t) {
-    burn_offset_x = get_rand_32() % 5;
-    burn_offset_y = get_rand_32() % 5;
-    return true;
-}
-
 void update_display() {
+    display_burn_update(false);
+
     // clear
     display_set_rectangle_fill(true);
     display_draw_rectangle(0, 0, 95, 63, 0, 0);
 
     // new text
-    display_set_text_position(0 + burn_offset_x, 20 + burn_offset_y);
+    display_set_text_position(0, 14);
     display_set_text_color(rgb888_to_565(0x101010)); //todo
     display_set_text_scale(2);
     
@@ -132,11 +123,10 @@ int main() {
     display_set_text_scale(2);
     display_print("BattMITM");
 
+    display_set_burn_limits(5, 5);
 
     struct repeating_timer display_update_timer;
-    struct repeating_timer burn_offset_timer;
     add_repeating_timer_ms(2000, trigger_display_update, NULL, &display_update_timer);
-    add_repeating_timer_ms(10000, update_burn_offset, NULL, &burn_offset_timer);
 
     init_mitm();
     while (true) {
