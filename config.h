@@ -62,7 +62,8 @@
 
 #define DISPLAY_FLIP_180 false
 
-#define DISPLAY_BURN_SHIFT_MIN_INTERVAL 10000000    // in microseconds
+#define DISPLAY_BURN_SHIFT_MIN_INTERVAL 10000000    // microseconds
+#define DISPLAY_INACTIVITY_TIMEOUT 10000000         // microseconds
 
 
 // button inputs

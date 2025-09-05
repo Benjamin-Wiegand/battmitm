@@ -25,16 +25,7 @@
 #include "display.h"
 #include "battery.h"
 
-// this mechanism will be replaced
-#define SCREEN_DIM_TIMEOUT 5000000
-
-uint64_t aod_last_input = 0;
-
-bool defused_aod_on_button_event(button_func_t function, button_event_t event) {
-    aod_last_input = time_us_64();
-    defused_update_display_now();
-    return true;
-}
+bool defused_aod_on_button_event(button_func_t function, button_event_t event) { return true; }
 
 void defused_aod_on_nav_up() {}
 void defused_aod_on_nav_down() {}
@@ -49,13 +40,6 @@ void defused_aod_update_display() {
     display_burn_update(false);
     
     display_clear();
-
-    if (aod_last_input + SCREEN_DIM_TIMEOUT < time_us_64()) {
-        display_set_contrast(0); // dimmest setting
-    } else {
-        display_set_contrast(255);
-    }
-
 
     battery_stat_lock();
     battery_stat_t* stat;
@@ -118,7 +102,7 @@ void defused_aod_init() {
 menu_binding_t defused_aod_menu_binding = {
     display_update_interval: 1000000,
     burn_margin_x: 5,
-    burn_margin_y: 20,
+    burn_margin_y: 10,
 
     on_button_event: &defused_aod_on_button_event,
 

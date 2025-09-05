@@ -25,9 +25,12 @@
 #include "defused/gui.h"
 #include "display.h"
 #include "aod.h"
+#include "config.h"
 
 
 menu_binding_t* defused_current_binding = NULL;
+uint64_t defused_last_interaction = 0;
+bool defused_inactive_mode = false;
 
 uint64_t defused_last_display_update = 0;
 bool defused_force_display_update = false;
@@ -37,6 +40,11 @@ bool defused_long_selected = false;
 bool defused_long_select_captured = false;
 
 void button_callback(button_func_t function, button_event_t event) {
+    defused_last_interaction = time_us_64();
+    if (defused_inactive_mode) {
+        defused_inactive_mode = false;
+        display_set_contrast(255);  //todo: bind main menu
+    }
     if (defused_current_binding == NULL) return;
     if (defused_current_binding->on_button_event(function, event)) return;
 
@@ -112,12 +120,19 @@ void defused_bind(menu_binding_t* binding) {
     defused_current_binding = binding;
     display_set_burn_limits(binding->burn_margin_x, binding->burn_margin_y);
     defused_current_binding->init();
+
+    defused_update_display_now();
 }
 
 
 void defused_loop() {
     if (defused_current_binding == NULL) return;
     uint64_t timestamp = time_us_64();
+
+    if (!defused_inactive_mode && defused_last_interaction + DISPLAY_INACTIVITY_TIMEOUT < timestamp) {
+        defused_inactive_mode = true;
+        defused_bind(bind_aod());
+    }
 
     if (defused_force_display_update || defused_last_display_update + defused_current_binding->display_update_interval < timestamp) {
         defused_force_display_update = false;
