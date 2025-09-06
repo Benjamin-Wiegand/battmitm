@@ -193,6 +193,13 @@ void display_shift_accellerated(int x, int y, uint16_t negative_color) {
 }
 
 
+void display_draw_rectangle_outline(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color) {
+    display_draw_line(x1, y1, x2, y1, color);   // top
+    display_draw_line(x2, y1, x2, y2, color);   // right
+    display_draw_line(x1, y2, x2, y2, color);   // bottom
+    display_draw_line(x1, y1, x1, y2, color);   // left
+}
+
 void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color) {
     if (x2 < x1) {
         uint8_t xt = x2;

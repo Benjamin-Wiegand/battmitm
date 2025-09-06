@@ -40,6 +40,7 @@
 
 uint16_t rgb888_to_565(uint32_t color24);
 
+void display_draw_rectangle_outline(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color);
 void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color);
 void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color);
 void display_draw_pixel(uint8_t x, uint8_t y, uint16_t color);
