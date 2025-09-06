@@ -3,7 +3,7 @@
 this is version 2 (or technically version 3) of a project that all started because I was too lazy to buy a level shifter.
 ![a pi pico on a piece of protoboard with a small oled, voltage regulator, and molex connector, mounted to the custom-built battery on the back of my ThinkPad T420](https://ben.wiegand.pw/img/battmitm-2-pipico-thumb.webp)
 
-this project uses a Raspberry Pi Pico RP2040 microcontroller (seen above). past hardware revisions include an off-brand Arduino Uno R3 (no picure) and a Genuino Arduino Leonardo ([picure](https://ben.wiegand.pw/img/smbus-mitm-arduino-thumb.webp)).
+this project uses a Raspberry Pi Pico RP2040 microcontroller (seen above). past hardware revisions include an off-brand Arduino Uno R3 (no picture) and a Genuino Arduino Leonardo ([picture](https://ben.wiegand.pw/img/smbus-mitm-arduino-thumb.webp)).
 
 the Arduino version had major technical limitations that made me not want to release it. also I blew up the arduino.
 
