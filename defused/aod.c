@@ -65,9 +65,10 @@ void defused_aod_update_display() {
     float voltage;
     aod_update_stats();
 
-    display_burn_update(false);
-    
+
     display_clear();
+
+
 
     battery_stat_lock();
 
@@ -105,10 +106,12 @@ void defused_aod_update_display() {
         display_printf("%.2f A", current);
     }
 
-
-
     battery_stat_unlock();
 
+
+
+    display_refresh();
+    display_burn_update(true);
 
 }
 

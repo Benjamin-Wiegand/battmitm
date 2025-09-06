@@ -294,7 +294,6 @@ void defused_stat_browser_display_health_info() {
 
 
 void defused_stat_browser_update_display() {
-    display_burn_update(false);
     display_clear();
 
     // page number
@@ -304,6 +303,9 @@ void defused_stat_browser_update_display() {
     display_printf("%d", stat_browser_page_index);
     
     stat_browser_page_callbacks[stat_browser_page_index]();
+    
+    display_refresh();
+    display_burn_update(true);
 }
 
 void defused_stat_browser_init() {
@@ -333,8 +335,8 @@ void defused_stat_browser_init() {
 
 menu_binding_t defused_stat_browser_menu_binding = {
     display_update_interval: 1000000,
-    burn_margin_x: 5,
-    burn_margin_y: 5,
+    burn_margin_x: 4,
+    burn_margin_y: 4,
 
     on_button_event: &defused_stat_browser_on_button_event,
 

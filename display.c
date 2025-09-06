@@ -47,6 +47,8 @@
 #define DISPLAY_CMD_CLEAR_WINDOW 0x25
 
 
+uint16_t display_framebuffer[DISPLAY_RESOLUTION_WIDTH][DISPLAY_RESOLUTION_HEIGHT];
+
 bool display_cs_state = 0;
 bool display_dc_state = 0;
 
@@ -125,7 +127,7 @@ void display_set_rectangle_fill(bool enabled) {
     display_send_cmd(enabled);
 }
 
-void display_draw_rectangle_internal(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t stroke_color, uint16_t fill_color) {
+void display_draw_rectangle_accellerated(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t stroke_color, uint16_t fill_color) {
 	display_send_cmd(DISPLAY_CMD_DRAW_RECTANGLE);
 
 	display_send_cmd(x1);
@@ -143,32 +145,7 @@ void display_draw_rectangle_internal(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t
     sleep_ms(1);
 }
 
-void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t stroke_color, uint16_t fill_color) {
-    display_draw_rectangle_internal(
-        x1 + burn_offset_x, 
-        y1 + burn_offset_y, 
-        x2 + burn_offset_x, 
-        y2 + burn_offset_y, 
-        stroke_color, fill_color);
-    
-}
-
-void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color) {
-	display_send_cmd(DISPLAY_CMD_DRAW_LINE);
-
-	display_send_cmd(x1 + burn_offset_x);
-	display_send_cmd(y1 + burn_offset_y);
-	display_send_cmd(x2 + burn_offset_x);
-	display_send_cmd(y2 + burn_offset_y);
-
-    display_send_cmd(rgb565_red(color));
-    display_send_cmd(rgb565_green(color));
-    display_send_cmd(rgb565_blue(color));
-    sleep_ms(1);
-}
-
-
-void display_copy_internal(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y) {
+void display_copy_accellerated(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y) {
     display_send_cmd(DISPLAY_CMD_COPY);
 
 	display_send_cmd(x1);
@@ -181,21 +158,94 @@ void display_copy_internal(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8
     sleep_ms(1);
 }
 
-void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y) {
-    display_copy_internal(
-        x1 + burn_offset_x, 
-        y1 + burn_offset_y, 
-        x2 + burn_offset_x, 
-        y2 + burn_offset_y, 
-        dest_x + burn_offset_x, 
-        dest_y + burn_offset_y);
+void display_shift_accellerated(int x, int y, uint16_t negative_color) {
+    if (x == 0 && y == 0) return;
+    uint x_offset, y_offset;
+    uint8_t x_start, y_start;
+    if (x > 95 || x < -95) x %= 96;
+    if (y > 63 || y < -63) x %= 64;
+
+    x_start = x < 0 ? -x : 0;
+    y_start = y < 0 ? -y : 0;
+    x_offset = x < 0 ? 0 : x;
+    y_offset = y < 0 ? 0 : y;
+
+    display_copy_accellerated(x_start, y_start, 95, 63, x_offset, y_offset);
+
+    if (x < 0) display_draw_rectangle_accellerated(96 - x_start, 0, 95, 63, negative_color, negative_color);
+    else if (x > 0) display_draw_rectangle_accellerated(0, 0, x_offset - 1, 63, negative_color, negative_color);
+    if (y < 0) display_draw_rectangle_accellerated(0, 63 - y_start, 95, 63, negative_color, negative_color);
+    else if (y > 0) display_draw_rectangle_accellerated(0, 0, 95, y_offset - 1, negative_color, negative_color);
 }
 
+
+void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color) {
+    if (x2 < x1) {
+        uint8_t xt = x2;
+        x2 = x1;
+        x1 = xt;
+    }
+    if (y2 < y1) {
+        uint8_t yt = y2;
+        y2 = y1;
+        y1 = yt;
+    }
+    if (x1 >= DISPLAY_RESOLUTION_WIDTH || y1 >= DISPLAY_RESOLUTION_HEIGHT) return;
+    if (x2 >= DISPLAY_RESOLUTION_WIDTH) x2 = DISPLAY_RESOLUTION_WIDTH - 1;
+    if (y2 >= DISPLAY_RESOLUTION_HEIGHT) y2 = DISPLAY_RESOLUTION_HEIGHT - 1;
+
+    for (uint x = x1; x <= x2; x++) {
+        for (uint y = y1; y <= y2; y++) {
+            display_framebuffer[x][y] = color;
+        }
+    }
+}
+
+void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color) {
+    if (x2 < x1) {
+        uint8_t xt = x2;
+        x2 = x1;
+        x1 = xt;
+    }
+    if (y2 < y1) {
+        uint8_t yt = y2;
+        y2 = y1;
+        y1 = yt;
+    }
+    if (x1 >= DISPLAY_RESOLUTION_WIDTH || y1 >= DISPLAY_RESOLUTION_HEIGHT) return;
+    
+    if (x1 == x2) {
+        // vertical line
+        if (y2 >= DISPLAY_RESOLUTION_HEIGHT) y2 = DISPLAY_RESOLUTION_HEIGHT - 1;
+        for (uint y = y1; y <= y2; y++) {
+            display_framebuffer[x1][y] = color;
+        }
+    } else if (y1 == y2) {
+        // horizontal line
+        if (x2 >= DISPLAY_RESOLUTION_WIDTH) x2 = DISPLAY_RESOLUTION_WIDTH - 1;
+        for (uint x = x1; x <= x2; x++) {
+            display_framebuffer[x][y1] = color;
+        }
+    } else if (x2 - x1 > y2 - y1) {
+        // horizontal-ish line
+        uint y;
+        for (uint x = x1; x <= x2; x++) {
+            y = y1 + (y2 - y1 + 1) * (x - x1) / (x2 - x1 + 1);
+            display_draw_pixel(x, y, color);    // checks bounds
+        }
+    } else {
+        // vertical-ish line
+        uint x;
+        for (uint y = y1; y <= y2; y++) {
+            x = x1 + (x2 - x1 + 1) * (y - y1) / (y2 - y1 + 1);
+            display_draw_pixel(x, y, color);    // checks bounds
+        }
+    }
+}
+
+
 void display_clear() {
-    bool old_fill_mode = display_rect_fill_mode;
-    display_set_rectangle_fill(true);
-    display_draw_rectangle_internal(0, 0, DISPLAY_RESOLUTION_WIDTH - 1, DISPLAY_RESOLUTION_HEIGHT - 1, 0, 0);
-    display_set_rectangle_fill(old_fill_mode);
+    display_draw_rectangle(0, 0, DISPLAY_RESOLUTION_WIDTH - 1, DISPLAY_RESOLUTION_HEIGHT - 1, 0);
 }
 
 // sets display contrast for all 3 colors
@@ -209,32 +259,6 @@ void display_set_contrast(uint8_t contrast) {
     display_send_cmd(DISPLAY_CMD_CONTRAST_C);
     display_send_cmd(contrast);
 }
-
-void display_shift(int x, int y, uint16_t negative_color) {
-    if (x == 0 && y == 0) return;
-    uint x_offset, y_offset;
-    uint8_t x_start, y_start;
-    if (x > 95 || x < -95) x %= 96;
-    if (y > 63 || y < -63) x %= 64;
-
-    x_start = x < 0 ? -x : 0;
-    y_start = y < 0 ? -y : 0;
-    x_offset = x < 0 ? 0 : x;
-    y_offset = y < 0 ? 0 : y;
-
-    display_copy_internal(x_start, y_start, 95, 63, x_offset, y_offset);
-
-    bool old_fill_mode = display_rect_fill_mode;
-    display_set_rectangle_fill(true);
-
-    if (x < 0) display_draw_rectangle_internal(96 - x_start, 0, 95, 63, negative_color, negative_color);
-    else if (x > 0) display_draw_rectangle_internal(0, 0, x_offset - 1, 63, negative_color, negative_color);
-    if (y < 0) display_draw_rectangle_internal(0, 63 - y_start, 95, 63, negative_color, negative_color);
-    else if (y > 0) display_draw_rectangle_internal(0, 0, 95, y_offset - 1, negative_color, negative_color);
-
-    display_set_rectangle_fill(old_fill_mode);
-}
-
 
 // update burn-in reduction offset (if it's time)
 // if shift_content is true, the display framebuffer will automatically be moved to the new offset
@@ -256,7 +280,7 @@ void display_burn_update(bool shift_content) {
     burn_offset_x += shift_x;
     burn_offset_y += shift_y;
     
-    if (shift_content) display_shift(shift_x, shift_y, 0);
+    if (shift_content) display_shift_accellerated(shift_x, shift_y, 0);
 }
 
 // set maximum offset for burn-in reduction
@@ -278,18 +302,13 @@ uint8_t display_area_height() {
 }
 
 
-void set_display_address_window(uint8_t x, uint8_t y, uint8_t width, uint8_t height) {
-    display_send_cmd(DISPLAY_CMD_COLUMN_ADDRESS);
-    display_send_cmd(x);
-    display_send_cmd(width);
-
-    display_send_cmd(DISPLAY_CMD_ROW_ADDRESS);
-    display_send_cmd(y);
-    display_send_cmd(height);
+void display_draw_pixel(uint8_t x, uint8_t y, uint16_t color) {
+    if (x >= DISPLAY_RESOLUTION_WIDTH || y >= DISPLAY_RESOLUTION_HEIGHT) return;
+    display_framebuffer[x][y] = color;
 }
 
 
-void draw_char(uint8_t x_pos, uint8_t y_pos, uint8_t scale_factor, uint16_t color, char c) {
+void display_draw_char(uint8_t x_pos, uint8_t y_pos, uint8_t scale_factor, uint16_t color, char c) {
     uint8_t* char_data = font_get_char(c);
     uint i;
 
@@ -311,13 +330,6 @@ void draw_char(uint8_t x_pos, uint8_t y_pos, uint8_t scale_factor, uint16_t colo
         }
     }
 }
-
-void display_draw_pixel(uint8_t x, uint8_t y, uint16_t color) {
-    uint8_t color_bytes[2] = {color >> 8, color & 0xFF};
-    set_display_address_window(x + burn_offset_x, y + burn_offset_y, 1, 1); 
-    display_send_buffer(color_bytes, 2);
-}
-
 
 void display_set_text_color(uint16_t color) {
     text_color = color;
@@ -341,7 +353,7 @@ void display_print(char* text) {
             text_pos_x = text_start_x;
             continue;
         }
-        draw_char(text_pos_x, text_pos_y, text_scale, text_color, text[i]);
+        display_draw_char(text_pos_x, text_pos_y, text_scale, text_color, text[i]);
         text_pos_x += FONT_WIDTH * text_scale + text_scale;
     }
 }
@@ -357,6 +369,56 @@ void display_printf(char* text, ...) {
     va_end(args);
 
     display_print(formatted);
+}
+
+
+void set_display_address_window(uint8_t x, uint8_t y, uint8_t width, uint8_t height) {
+    display_send_cmd(DISPLAY_CMD_COLUMN_ADDRESS);
+    display_send_cmd(x);
+    display_send_cmd(width);
+
+    display_send_cmd(DISPLAY_CMD_ROW_ADDRESS);
+    display_send_cmd(y);
+    display_send_cmd(height);
+}
+
+void display_refresh_region(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
+    if (x2 < x1) {
+        uint8_t xt = x2;
+        x2 = x1;
+        x1 = xt;
+    }
+    if (y2 < y1) {
+        uint8_t yt = y2;
+        y2 = y1;
+        y1 = yt;
+    }
+    if (x1 >= DISPLAY_RESOLUTION_WIDTH || y1 >= DISPLAY_RESOLUTION_HEIGHT) return;
+    if (x2 >= DISPLAY_RESOLUTION_WIDTH) x2 = DISPLAY_RESOLUTION_WIDTH - 1;
+    if (y2 >= DISPLAY_RESOLUTION_HEIGHT) y2 = DISPLAY_RESOLUTION_HEIGHT - 1;
+
+    uint8_t color_bytes[2];
+    for (uint x = x1; x <= x2; x++) {
+        for (uint y = y1; y <= y2; y++) {
+            set_display_address_window(burn_offset_x + x, burn_offset_y + y, 1, 1);
+
+            // out of bounds, but still clear it
+            if (x >= display_area_width() || y >= display_area_height()) {
+                color_bytes[0] = 0;
+                color_bytes[1] = 0;
+                display_send_buffer(color_bytes, 2);
+                continue;
+            }
+
+            color_bytes[0] = display_framebuffer[x][y] >> 8;
+            color_bytes[1] = display_framebuffer[x][y] & 0xFF;
+            display_send_buffer(color_bytes, 2);
+        }
+    }
+}
+
+void display_refresh() {
+    display_refresh_region(0, 0, DISPLAY_RESOLUTION_WIDTH - 1, DISPLAY_RESOLUTION_HEIGHT - 1);
 }
 
 
@@ -400,5 +462,6 @@ void init_display() {
 
     // clear framebuffer
     display_clear();
+    display_refresh();
 }
 

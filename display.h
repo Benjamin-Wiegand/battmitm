@@ -37,13 +37,10 @@
 
 uint16_t rgb888_to_565(uint32_t color24);
 
-void display_set_rectangle_fill(bool enabled);
-void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t stroke_color, uint16_t fill_color);
+void display_draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color);
 void display_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint16_t color);
-void display_draw_char(uint8_t x_offset, uint8_t y_offset, uint8_t scale_factor, uint16_t color, char c);
 void display_draw_pixel(uint8_t x, uint8_t y, uint16_t color);
 
-void display_copy(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t dest_x, uint8_t dest_y);
 void display_clear();
 
 void display_set_contrast(uint8_t contrast);
@@ -59,5 +56,8 @@ void display_set_text_position(uint8_t x, uint8_t y);
 
 void display_print(char* text);
 void display_printf(char* text, ...);
-    
+
+void display_refresh_region(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
+void display_refresh();
+
 void init_display();

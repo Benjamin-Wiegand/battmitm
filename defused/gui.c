@@ -190,6 +190,7 @@ void init_gui() {
     display_set_text_color(COLOR_WHITE);
     display_set_text_scale(2);
     display_print("BattMITM");
+    display_refresh();
     
     sleep_ms(2000);
     
