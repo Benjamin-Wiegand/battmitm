@@ -103,6 +103,17 @@ void display_send_buffer(uint8_t* buffer, size_t length) {
 // converts rgb888 (24-bit) colors to rgb565 (16-bit) colors
 // provided for convenience during development since some know rgb888 by heart
 // avoid using this when you can, and just use rgb565 colors directly
+// here is some (roughly) equivalent python code for converting colors:
+/*
+def rgb888_to_565(color):
+    ret = 0
+    ret += int(((color >> 16) & 0xFF) * 0x1F / 0xFF) << 11    # red
+    ret += int(((color >> 8) & 0xFF) * 0x3F / 0xFF) << 5      # green
+    ret += int((color & 0xFF) * 0x1F / 0xFF)                  # blue
+    return ret
+
+print(hex(rgb888_to_565(0x696969)))
+*/
 uint16_t rgb888_to_565(uint32_t color24) {
     uint16_t color16 = 0;
     color16 += (((color24 >> 16) & 0xFF) * 0x1F / 0xFF) << 11;  // red
