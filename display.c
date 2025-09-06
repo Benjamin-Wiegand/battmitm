@@ -65,8 +65,11 @@ uint64_t burn_last_updated = 0;
 uint8_t text_start_x = 0;
 uint8_t text_pos_x = 0;
 uint8_t text_pos_y = FONT_HEIGHT;
+uint8_t text_limit_x = DISPLAY_RESOLUTION_WIDTH;
+uint8_t text_line_spacing = 3;
+bool text_word_wrap = false;
 uint8_t text_scale = 1;
-uint16_t text_color = 0xFFFF;
+uint16_t text_color = COLOR_WHITE;
 
 
 void display_set_cs(bool state) {
@@ -345,14 +348,35 @@ void display_set_text_position(uint8_t x, uint8_t y) {
     text_pos_y = y;
 }
 
+void display_set_text_bound(uint8_t x_limit) {
+    text_limit_x = x_limit;
+}
+
+void display_set_text_word_wrap(bool enabled) {
+    text_word_wrap = enabled;
+}
+
+void display_set_text_line_spacing(uint8_t spacing) {
+    text_line_spacing = spacing;
+}
+
+void display_line_feed() {
+    text_pos_y += FONT_HEIGHT * text_scale + text_line_spacing;
+    text_pos_x = text_start_x;
+}
+
 void display_print(char* text) {
     size_t length = strlen(text);
     for (size_t i = 0; i < length; i++) {
         if (text[i] == '\n') {
-            text_pos_y += FONT_HEIGHT * text_scale + text_scale;
-            text_pos_x = text_start_x;
+            display_line_feed();
             continue;
         }
+        
+        if (text_word_wrap && text_pos_x + FONT_WIDTH * text_scale >= text_limit_x) {
+            display_line_feed();
+        }
+        
         display_draw_char(text_pos_x, text_pos_y, text_scale, text_color, text[i]);
         text_pos_x += FONT_WIDTH * text_scale + text_scale;
     }
