@@ -67,7 +67,7 @@ uint8_t text_pos_x = 0;
 uint8_t text_pos_y = FONT_HEIGHT;
 uint8_t text_limit_x = DISPLAY_RESOLUTION_WIDTH;
 uint8_t text_line_spacing = 3;
-bool text_word_wrap = false;
+bool text_wrap = false;
 uint8_t text_scale = 1;
 uint16_t text_color = COLOR_WHITE;
 
@@ -370,8 +370,8 @@ void display_set_text_bound(uint8_t x_limit) {
     text_limit_x = x_limit;
 }
 
-void display_set_text_word_wrap(bool enabled) {
-    text_word_wrap = enabled;
+void display_set_text_wrap(bool enabled) {
+    text_wrap = enabled;
 }
 
 void display_set_text_line_spacing(uint8_t spacing) {
@@ -391,7 +391,7 @@ void display_print(char* text) {
             continue;
         }
         
-        if (text_word_wrap && text_pos_x + FONT_WIDTH * text_scale >= text_limit_x) {
+        if (text_wrap && text_pos_x + FONT_WIDTH * text_scale >= text_limit_x) {
             display_line_feed();
         }
         

@@ -58,7 +58,7 @@ void display_set_text_color(uint16_t color);
 void display_set_text_scale(uint8_t scale_factor);
 void display_set_text_position(uint8_t x, uint8_t y);
 void display_set_text_bound(uint8_t x_limit);
-void display_set_text_word_wrap(bool enabled);
+void display_set_text_wrap(bool enabled);
 void display_set_text_line_spacing(uint8_t spacing);
 
 void display_print(char* text);
