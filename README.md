@@ -1,13 +1,11 @@
 # BattMITM
 
-rewriting it for pi pico for some reason.
+this is version 2 (or technically version 3) of a project that all started because I was too lazy to buy a level shifter.
+![a pi pico on a piece of protoboard with a small oled, voltage regulator, and molex connector, mounted to the custom-built battery on the back of my ThinkPad T420](https://ben.wiegand.pw/img/battmitm-2-pipico-thumb.webp)
 
+this project uses a Raspberry Pi Pico RP2040 microcontroller (seen above). past hardware revisions include an off-brand Arduino Uno R3 (no picure) and a Genuino Arduino Leonardo ([picure](https://ben.wiegand.pw/img/smbus-mitm-arduino-thumb.webp)).
 
-the goal is to match (and possibly exceed) the existing implementation currently mounted to my laptop that I'm typing this on:
-![the arduino leonardo that's attached to my battery, complete with small OLED display](https://ben.wiegand.pw/img/smbus-mitm-arduino-thumb.webp)
-to imagine what it would look like, pretend that it's a pi pico on a piece of protoboard instead of an arduino leonardo.
-
-also I broke the arduino while working on this. there's no going back now.
+the Arduino version had major technical limitations that made me not want to release it. also I blew up the arduino.
 
 ## liability disclaimer
 
@@ -22,6 +20,8 @@ please refer to the MIT license text for more information on this matter.
 ## project status
 - passthrough partially works (no host commands yet). my laptop charges and discharges as normal through it.
 - read cmd reply overrides work (these encompass 99% of useful overrides). they are defined in `config_override.h`.
+- a basic version of the GUI is working. it requires an SSD1331 96x64 16-bit color OLED display over SPI. the driver is built-in and made by yours truly. there are no other drivers. 
+- uart control is todo
 
 NOTE: as mentioned, laptop -> battery commands work but battery -> laptop commands don't. this means SBS alarms won't notify the laptop. 
 some laptops poll the battery for alarms regardless, so this may not be a huge issue for you.
@@ -107,7 +107,9 @@ such metrics can include (but are not limited to):
 
 additionally, BattMITM allows you to modify the information exposed to your laptop if you've re-celled your battery pack, letting you correct any information which has changed as opposed to when it was stock.
 
-nothing would stop you from even trying to enter the bootrom of your BMS and reprogramming it through this (I'm not going to make any promises about success there though).
+nothing would stop you from even trying to enter the boot rom of your BMS and reprogramming it through this (I'm not going to make any promises about success there though).
+
+*also to be completely real it's really nice to have a battery indicator without having to wake the laptop from sleep.*
 
 
 ## is this safe?
