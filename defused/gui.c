@@ -27,6 +27,7 @@
 #include "defused/stat_browser.h"
 #include "display.h"
 #include "config.h"
+#include "graphics.h"
 
 
 // active menu
@@ -158,43 +159,56 @@ void defused_attenuate_contrast(uint8_t target) {
 
 
 void defused_loop() {
-    if (defused_current_binding == NULL) return;
     uint64_t timestamp = time_us_64();
+
+    graphics_update();
 
     if (!defused_inactive_mode && defused_last_interaction + DISPLAY_INACTIVITY_TIMEOUT < timestamp) {
         defused_enter_inactive_mode();
     }
 
-    if (defused_force_display_update || defused_last_display_update + defused_current_binding->display_update_interval < timestamp) {
-        defused_force_display_update = false;
-        defused_current_binding->update_display();
-        defused_last_display_update = timestamp;
-    }
-    
     if (defused_contrast_current != defused_contrast_target && defused_contrast_last_attenuated + DISPLAY_CONTRAST_ATTENUATION_INTERVAL < timestamp ) {
         defused_contrast_last_attenuated = timestamp;
         if (defused_contrast_current > defused_contrast_target) defused_contrast_current--;
         else defused_contrast_current++;
         display_set_contrast(defused_contrast_current);
     }
+
+    
+    if (defused_current_binding == NULL) return;
+
+    if (defused_force_display_update || defused_last_display_update + defused_current_binding->display_update_interval < timestamp) {
+        defused_force_display_update = false;
+        defused_current_binding->update_display();
+        defused_last_display_update = timestamp;
+    }
 }
 
 void init_gui() {
     init_button();
     init_display();
+    init_graphics();
 
     button_set_callback(&button_callback);
 
+    // display controls init
     display_set_contrast(defused_contrast_current);
-    display_set_text_position(1, 40);
-    display_set_text_color(COLOR_WHITE);
-    display_set_text_scale(2);
-    display_print("BattMITM");
-    display_refresh();
+    
+    // boot splash
+    g_text_box_t* title = get_g_text_box_inst();
+    setup_g_text_box(title, 0, 0, display_area_width() - 1, 1, COLOR_WHITE);
+    g_text_box_print(title, "BattMITM");
+    title->scale_factor = 2;
+    title->truncation_mode = TEXT_TRUNCATE;
+    title->alignment_mode = TEXT_ALIGN_CENTER;
+    title->y1 = display_area_height() / 2 - g_text_box_height(title) / 2;
+    graphics_add_text_box(title);
+
+    graphics_render();
     
     sleep_ms(2000);
     
-    display_clear();
+    graphics_reset();
     
     defused_bind(bind_stat_browser());
     
