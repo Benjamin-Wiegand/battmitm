@@ -23,8 +23,7 @@
  */
 #include "aod.h"
 #include "display.h"
-#include "graphics.h"
-#include "battery.h"
+#include "defused/batt_gui_util.h"
 
 g_text_box_t* aod_charge_text;
 g_text_box_t* aod_voltage_text;
@@ -71,32 +70,25 @@ void defused_aod_update_display() {
 
     battery_stat_lock();
 
-    if (!aod_print_stat_error(aod_charge, aod_charge_text)) {
-        aod_charge_text->color = COLOR_WHITE;
-        g_text_box_printf(
-            aod_charge_text, "%d%%", 
-            *aod_charge->cached_result.as_uint16);
+    if (!defused_print_batt_stat_error(aod_charge_text, aod_charge, COLOR_WHITE, "--%", "ERR%")) {
+        g_text_box_printf(aod_charge_text, 
+            "%d%%", *aod_charge->cached_result.as_uint16);
     }
     
-    if (!aod_print_stat_error(aod_remaining_capacity, aod_remaining_capacity_text)) {
+    if (!defused_print_batt_stat_error(aod_remaining_capacity_text, aod_remaining_capacity, COLOR_GRAY, "--.-- Wh", "error")) {
         aod_remaining_capacity_text->color = COLOR_GRAY;
-        g_text_box_printf(
-            aod_remaining_capacity_text, "%.2f Wh", 
-            (*aod_remaining_capacity->cached_result.as_uint16) / 100.0);
+        g_text_box_printf(aod_remaining_capacity_text, 
+            "%.2f Wh", (*aod_remaining_capacity->cached_result.as_uint16) / 100.0);
     }
 
-    if (!aod_print_stat_error(aod_voltage, aod_voltage_text)) {
-        aod_voltage_text->color = COLOR_GREEN;
-        g_text_box_printf(
-            aod_voltage_text, "%.2f V",
-            (*aod_voltage->cached_result.as_uint16) / 1000.0);
+    if (!defused_print_batt_stat_error(aod_voltage_text, aod_voltage, COLOR_GREEN, "--.-- V", "error")) {
+        g_text_box_printf(aod_voltage_text, 
+            "%.2f V", (*aod_voltage->cached_result.as_uint16) / 1000.0);
     }
 
-    if (!aod_print_stat_error(aod_current, aod_current_text)) {
-        aod_current_text->color = COLOR_RED;
-        g_text_box_printf(
-            aod_current_text, "%+.2f A",
-            (*aod_current->cached_result.as_int16) / 1000.0);
+    if (!defused_print_batt_stat_error(aod_current_text, aod_current, COLOR_RED, "--.-- A", "error")) {
+        g_text_box_printf(aod_current_text, 
+            "%+.2f A", (*aod_current->cached_result.as_int16) / 1000.0);
     }
 
     battery_stat_unlock();
@@ -130,7 +122,9 @@ void defused_aod_init() {
 
     // charge %. big, centered, 10th of the way down
     y = display_area_height() / 10;
-    setup_g_text_box(aod_charge_text, 0, y, display_area_width() - 1, 1, 0);
+    setup_g_text_box(aod_charge_text, 
+        0, y, display_area_width() - 1, 
+        1, 0);
     aod_charge_text->scale_factor = 2;
     aod_charge_text->alignment_mode = TEXT_ALIGN_CENTER;
     aod_charge_text->truncation_mode = TEXT_MARQUEE;
@@ -138,18 +132,25 @@ void defused_aod_init() {
 
     // remaining capacity. right under %
     y += g_text_box_height(aod_charge_text) + 5;
-    setup_g_text_box(aod_remaining_capacity_text, 0, y, display_area_width() - 1, 1, 0);
+    setup_g_text_box(aod_remaining_capacity_text, 
+        0, y, display_area_width() - 1, 
+        1, 0);
     aod_remaining_capacity_text->alignment_mode = TEXT_ALIGN_CENTER;
     aod_remaining_capacity_text->truncation_mode = TEXT_MARQUEE;
 
     // voltage. left side
-    setup_g_text_box(aod_voltage_text, 0, 0, display_area_width() / 2 - 1, 1, 0);
-    aod_voltage_text->alignment_mode = TEXT_ALIGN_RIGHT;
+    setup_g_text_box(aod_voltage_text, 
+        0, 0, display_area_width() / 2 - 1, 
+        1, 0);
+    aod_voltage_text->alignment_mode = TEXT_ALIGN_CENTER;
     aod_voltage_text->truncation_mode = TEXT_MARQUEE;
 
     // current. right side
-    setup_g_text_box(aod_current_text, display_area_width() / 2, 0, display_area_width() - 1, 1, 0);
-    aod_current_text->alignment_mode = TEXT_ALIGN_RIGHT;
+    setup_g_text_box(aod_current_text, 
+        aod_voltage_text->x2 + 1, 0, 
+        display_area_width() - 1, 
+        1, 0);
+    aod_current_text->alignment_mode = TEXT_ALIGN_CENTER;
     aod_current_text->truncation_mode = TEXT_MARQUEE;
 
     // slam voltage and current to the bottom
