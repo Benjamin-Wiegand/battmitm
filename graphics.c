@@ -379,6 +379,11 @@ void graphics_add_line(g_line_t* inst) {
     graphics_add_object(holder);
 }
 
+coord_t graphics_calculate_text_width(size_t chars, coord_t scale_factor) {
+    if (chars == 0) return 0;
+    return FONT_WIDTH * chars * scale_factor + (chars - 1) * scale_factor;
+}
+
 void graphics_render() {
     g_object_holder_t* holder;
 

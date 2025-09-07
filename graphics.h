@@ -124,6 +124,9 @@ void graphics_add_text_box(g_text_box_t* inst);
 void graphics_add_rectangle(g_rectangle_t* inst);
 void graphics_add_line(g_line_t* inst);
 
+// utils
+coord_t graphics_calculate_text_width(size_t chars, coord_t scale_factor);
+
 // renders everything to the framebuffer
 void graphics_render();
 
