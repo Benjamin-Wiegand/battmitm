@@ -45,6 +45,7 @@ add_executable(BattMITM_2.0
         font.c 
         battery.c 
         button.c
+        graphics.c
         defused/gui.c
         defused/aod.c
         defused/stat_browser.c
