@@ -157,6 +157,11 @@ void render_g_text_box(g_text_box_t* inst) {
         }
     }
 
+    size_t marquee_length = chars_per_line;
+    if (inst->length - marquee_index < chars_per_line) {
+        marquee_length = inst->length - marquee_index;
+    }
+
     size_t line_start_i = marquee_index;
     size_t i;
     for (i = line_start_i; i < inst->length + 1; i++) {
@@ -180,7 +185,7 @@ void render_g_text_box(g_text_box_t* inst) {
                     graphics_render_text_line_internal(
                         inst->x1, y, inst->x2, inst->alignment_mode, inst->scale_factor, 
                         inst->color, &inst->text[line_start_i], 
-                        chars_per_line,
+                        marquee_length,
                         marquee_index > 0, 
                         i - line_start_i > chars_per_line);
                     break;
