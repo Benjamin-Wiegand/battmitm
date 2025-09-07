@@ -23,7 +23,13 @@
  */
 #include "aod.h"
 #include "display.h"
+#include "graphics.h"
 #include "battery.h"
+
+g_text_box_t* aod_charge_text;
+g_text_box_t* aod_voltage_text;
+g_text_box_t* aod_current_text;
+g_text_box_t* aod_remaining_capacity_text;
 
 battery_stat_t* aod_charge;
 battery_stat_t* aod_voltage;
@@ -47,88 +53,121 @@ void aod_update_stats() {
     battery_stat_request_update(aod_remaining_capacity);
 }
 
-bool aod_print_stat_error(battery_stat_t* stat) {
+bool aod_print_stat_error(battery_stat_t* stat, g_text_box_t* text_box) {
     if (battery_stat_is_expired(stat)) {
-        display_set_text_color(COLOR_GRAY);
-        display_print("...");
+        text_box->color = COLOR_GRAY;
+        g_text_box_print(text_box, "...");
         return true;
     } else if (battery_stat_is_error(stat)) {
-        display_set_text_color(COLOR_RED);
-        display_print("error");
+        text_box->color = COLOR_RED;
+        g_text_box_print(text_box, "error");
         return true;
     }
     return false;
 }
 
 void defused_aod_update_display() {
-    float current;
-    float voltage;
-    aod_update_stats();
-
-
-    display_clear();
-
 
 
     battery_stat_lock();
 
-    display_set_text_position(0, 24);
-    display_set_text_scale(2);
-
-    if (!aod_print_stat_error(aod_charge)) {
-        display_set_text_color(COLOR_WHITE);
-        display_printf("%d%%", *aod_charge->cached_result.as_uint16);
+    if (!aod_print_stat_error(aod_charge, aod_charge_text)) {
+        aod_charge_text->color = COLOR_WHITE;
+        g_text_box_printf(
+            aod_charge_text, "%d%%", 
+            *aod_charge->cached_result.as_uint16);
     }
     
-    display_set_text_position(0, 34);
-    display_set_text_scale(1);
-
-    if (!aod_print_stat_error(aod_remaining_capacity)) {
-        display_set_text_color(COLOR_GRAY);
-        display_printf("%.2f Wh", (*aod_remaining_capacity->cached_result.as_uint16) / 100.0);
+    if (!aod_print_stat_error(aod_remaining_capacity, aod_remaining_capacity_text)) {
+        aod_remaining_capacity_text->color = COLOR_GRAY;
+        g_text_box_printf(
+            aod_remaining_capacity_text, "%.2f Wh", 
+            (*aod_remaining_capacity->cached_result.as_uint16) / 100.0);
     }
 
-    display_set_text_position(0, 54);
-
-    if (!aod_print_stat_error(aod_voltage)) {
-        display_set_text_color(COLOR_GREEN);
-        voltage = (*aod_voltage->cached_result.as_uint16) / 1000.0;
-        if (voltage < 10.0) display_print(" ");
-        display_printf("%.2f V", voltage);
+    if (!aod_print_stat_error(aod_voltage, aod_voltage_text)) {
+        aod_voltage_text->color = COLOR_GREEN;
+        g_text_box_printf(
+            aod_voltage_text, "%.2f V",
+            (*aod_voltage->cached_result.as_uint16) / 1000.0);
     }
 
-    display_print(" ");
-
-    if (!aod_print_stat_error(aod_current)) {
-        display_set_text_color(COLOR_RED);
-        current = (*aod_current->cached_result.as_int16) / 1000.0;
-        if (current >= 0.0) display_print("+");
-        display_printf("%.2f A", current);
+    if (!aod_print_stat_error(aod_current, aod_current_text)) {
+        aod_current_text->color = COLOR_RED;
+        g_text_box_printf(
+            aod_current_text, "%+.2f A",
+            (*aod_current->cached_result.as_int16) / 1000.0);
     }
 
     battery_stat_unlock();
 
 
-
-    display_refresh();
+    graphics_render();
     display_burn_update(true);
 
+    aod_update_stats();
 }
 
 void defused_aod_init() {
+    coord_t y;
+
     aod_charge = battery_get_stat(BATT_CMD_RELATIVE_STATE_OF_CHARGE);
     aod_voltage = battery_get_stat(BATT_CMD_VOLTAGE);
     aod_current = battery_get_stat(BATT_CMD_CURRENT);
     aod_remaining_capacity = battery_get_stat(BATT_CMD_REMAINING_CAPACITY);
     
     aod_update_stats();
+    
+    graphics_reset();
+    
+    aod_charge_text = get_g_text_box_inst();
+    aod_voltage_text = get_g_text_box_inst();
+    aod_current_text = get_g_text_box_inst();
+    aod_remaining_capacity_text = get_g_text_box_inst();
+    
+
+    // layout
+
+    // charge %. big, centered, 10th of the way down
+    y = display_area_height() / 10;
+    setup_g_text_box(aod_charge_text, 0, y, display_area_width() - 1, 1, 0);
+    aod_charge_text->scale_factor = 2;
+    aod_charge_text->alignment_mode = TEXT_ALIGN_CENTER;
+    aod_charge_text->truncation_mode = TEXT_MARQUEE;
+
+
+    // remaining capacity. right under %
+    y += g_text_box_height(aod_charge_text) + 5;
+    setup_g_text_box(aod_remaining_capacity_text, 0, y, display_area_width() - 1, 1, 0);
+    aod_remaining_capacity_text->alignment_mode = TEXT_ALIGN_CENTER;
+    aod_remaining_capacity_text->truncation_mode = TEXT_MARQUEE;
+
+    // voltage. left side
+    setup_g_text_box(aod_voltage_text, 0, 0, display_area_width() / 2 - 1, 1, 0);
+    aod_voltage_text->alignment_mode = TEXT_ALIGN_RIGHT;
+    aod_voltage_text->truncation_mode = TEXT_MARQUEE;
+
+    // current. right side
+    setup_g_text_box(aod_current_text, display_area_width() / 2, 0, display_area_width() - 1, 1, 0);
+    aod_current_text->alignment_mode = TEXT_ALIGN_RIGHT;
+    aod_current_text->truncation_mode = TEXT_MARQUEE;
+
+    // slam voltage and current to the bottom
+    aod_voltage_text->y1 = display_area_height() - g_text_box_height(aod_voltage_text);
+    aod_current_text->y1 = display_area_height() - g_text_box_height(aod_voltage_text);
+    
+
+    graphics_add_text_box(aod_charge_text);
+    graphics_add_text_box(aod_voltage_text);
+    graphics_add_text_box(aod_current_text);
+    graphics_add_text_box(aod_remaining_capacity_text);
 }
 
 
 menu_binding_t defused_aod_menu_binding = {
     display_update_interval: 1000000,
-    burn_margin_x: 5,
-    burn_margin_y: 10,
+    burn_margin_x: 0,
+    burn_margin_y: 15,
 
     on_button_event: &defused_aod_on_button_event,
 
