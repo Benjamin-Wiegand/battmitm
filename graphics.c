@@ -112,7 +112,7 @@ void graphics_render_text_line_internal(coord_t x, coord_t y, coord_t x_limit, g
     coord_t line_length = FONT_WIDTH * scale_factor * length + scale_factor * (length - 1);
     switch (alignment_mode) {
         case TEXT_ALIGN_CENTER:
-            x = (x_limit - x + 1 - line_length) / 2;
+            x += (x_limit - x + 1 - line_length) / 2;
             break;
 
         case TEXT_ALIGN_RIGHT:
