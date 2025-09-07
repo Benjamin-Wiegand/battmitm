@@ -226,8 +226,7 @@ void graphics_add_object(g_object_holder_t holder) {
 
 
 coord_t g_text_box_height(g_text_box_t* inst) {
-    if (inst->text == NULL || inst->length == 0) return 0;
-    if (inst->max_lines == 1 || inst->truncation_mode == TEXT_MARQUEE) return FONT_HEIGHT * inst->scale_factor;
+    if (inst->text == NULL || inst->length == 0 || inst->max_lines == 1 || inst->truncation_mode == TEXT_MARQUEE) return FONT_HEIGHT * inst->scale_factor;
 
     coord_t max_line_len = inst->x2 - inst->x1 + 1;
     coord_t cur_line_len = 0;
