@@ -81,7 +81,6 @@ health_verdict_t* health_info_verdicts_cycle_wear_matrix[6][6] = {
 };
 
 uint health_info_get_wear_verdict_index(float calculated_wear) {
-    // TODO: should probably allow getting values from overrides for things like this
     if (calculated_wear < -10) return 0;          // likely very mis-calibrated
     else if (calculated_wear <= 10) return 1;
     else if (calculated_wear <= 20) return 2;
