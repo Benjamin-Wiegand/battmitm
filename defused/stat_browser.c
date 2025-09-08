@@ -28,6 +28,7 @@
 
 #include "defused/stat_page/general_info.h"
 #include "defused/stat_page/health_info.h"
+#include "defused/stat_page/cell_voltage_info.h"
 
 g_text_box_t* stat_browser_page_number_text;
 g_text_box_t* stat_browser_page_title_text;
@@ -52,6 +53,13 @@ stat_browser_page_t stat_browser_page_defs[] = {
         update_display: &defused_stat_page_health_info_update,
         init: &defused_stat_page_health_info_init,
     },
+#ifdef CELL_VOLTAGE_INFO_AVAILABLE 
+    (stat_browser_page_t){
+        title: "cell voltage",
+        update_display: &defused_stat_page_cell_voltage_info_update,
+        init: &defused_stat_page_cell_voltage_info_init,
+    },
+#endif
 };
 
 

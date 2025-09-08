@@ -73,3 +73,6 @@
 #define BUTTON_SELECT_PIN 1
 #define BUTTON_NAV_DOWN_PIN 0
 
+
+// uncomment this to show cell voltage screen if you have a lenovo battery
+//#define LENOVO_CELL_VOLTAGES
