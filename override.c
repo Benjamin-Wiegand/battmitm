@@ -21,39 +21,18 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
-#include <stdint.h>
-#include <stddef.h>
-#include "hardware/i2c.h"
-
-#define SMBUS_ERROR_DEVICE -1
-#define SMBUS_ERROR_GENERIC -2
-#define SMBUS_ERROR_CRC -3
+#include "override.h"
+#include "config_override.h"
 
 
-#ifndef I2C_DEV_DEF
-#define I2C_DEV_DEF
+cmd_reply_override get_read_command_reply_override(uint8_t cmd) {
+    return config_get_read_command_reply_override(cmd);
+}
 
-struct i2c_dev {
-    i2c_inst_t* i2c;
-    uint8_t address;
-    uint timeout;
-};
+bool defused_use_read_command_reply_override(uint8_t cmd) {
+    return config_defused_use_read_command_reply_override(cmd);
+}
 
-typedef struct i2c_dev i2c_dev_t;
-
-#endif
-
-i2c_dev_t* get_bms_dev();
-i2c_dev_t* get_laptop_dev();
-
-int i2c_stop_read_blocking(i2c_dev_t* device);
-int generate_smbus_crc(uint8_t address, uint8_t cmd, uint8_t* reply, uint8_t length, bool is_block, bool is_read);
-bool validate_smbus_crc(uint8_t address, uint8_t cmd, uint8_t* reply, uint8_t length, uint8_t recieved_crc, bool is_block, bool is_read);
-
-int smbus_read(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t length);
-int smbus_read_block(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t max_length);
-
-int smbus_read_uint16(i2c_dev_t* device, uint8_t cmd, uint16_t* result);
-int smbus_read_text(i2c_dev_t* device, uint8_t cmd, char* result, size_t max_length);
-
-
+bool uart_use_read_command_reply_override(uint8_t cmd) {
+    return config_uart_use_read_command_reply_override(cmd);
+}

@@ -159,7 +159,7 @@ int override_example_modify_manufacturer_name(uint8_t cmd, uint8_t* reply_buffer
 
 // map command codes to override functions here
 // for a list of command code definitions see battery.h
-cmd_reply_override get_read_command_reply_override(uint8_t cmd) {
+cmd_reply_override config_get_read_command_reply_override(uint8_t cmd) {
     switch (cmd) {
 
         // examples:
@@ -171,6 +171,19 @@ cmd_reply_override get_read_command_reply_override(uint8_t cmd) {
     }
 }
 
+
+// defines whether the gui (defused) will use the override instead of reading directly from the battery
+bool config_defused_use_read_command_reply_override(uint8_t cmd) {
+    // you can write a switch statement here to change this behavior per command
+    return true;    // use the override by default
+}
+
+
+// defines whether the uart interface (not yet implemented) will use the override instead of reading directly from the battery
+bool config_uart_use_read_command_reply_override(uint8_t cmd) {
+    // you can write a switch statement here to change this behavior per command
+    return false;   // don't use the override by default
+}
 
 
 

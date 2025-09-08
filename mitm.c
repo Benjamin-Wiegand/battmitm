@@ -29,7 +29,7 @@
 #include "pico/stdlib.h"
 #include "hardware/irq.h"
 #include <stdio.h>
-#include "config_override.h"
+#include "override.h"
 
 enum i2c_transfer_event {
     I2C_READ,
@@ -337,5 +337,69 @@ void mitm_loop() {
 
     status_mitm(false);
 
+}
+
+int mitm_smbus_read_with_override(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t length, bool is_block, cmd_reply_override override) {
+    int ret;
+    uint8_t block_length;
+    
+    if (length > MITM_REPLY_BUFFER_SIZE - 1) return -1;
+
+    printf("reading cmd 0x%02x with override\n", cmd);
+    
+    // set up for read cmd
+    mitm_cmd_buffer[0] = cmd;
+    mitm_cmd_buffer_index = 1;
+
+    ret = i2c_write_timeout_us(device->i2c, device->address, mitm_cmd_buffer, mitm_cmd_buffer_index, true, device->timeout);
+    if (ret < 0) {
+        printf("failed, write returned %d\n", ret);
+        return SMBUS_ERROR_DEVICE;
+    }
+    
+
+    ret = override(cmd, mitm_reply_buffer);
+    i2c_stop_read_blocking(device);
+    if (ret < 0) {
+        printf("failed, override returned %d\n", ret);
+        return SMBUS_ERROR_CRC;    // pretend it was corrupted
+    }
+
+    // read the result from the buffer like the laptop would
+
+    if (is_block) {
+        block_length = mitm_reply_buffer[0];
+        if (block_length > MITM_REPLY_BUFFER_SIZE - 2) {
+            printf("failed, block length %d doesn't fit in reply buffer size!", block_length);
+            return SMBUS_ERROR_CRC;  
+        }
+        if (block_length > length) {
+            printf("failed, block length %d is larger than max result length %d!", block_length, length);
+            return SMBUS_ERROR_CRC;
+        }
+    }
+
+    if (!mitm_validate_batt_reply(mitm_reply_buffer, is_block ? block_length + 1 : length, is_block)) return SMBUS_ERROR_CRC;
+
+    // copy to result buffer
+    for (uint i = 0; i < (is_block ? block_length : length); i++) {
+        result[i] = is_block ? mitm_reply_buffer[i + 1] : mitm_reply_buffer[i];
+    }
+
+    return is_block ? block_length : length;
+}
+
+int mitm_smbus_read_text_with_override(i2c_dev_t* device, uint8_t cmd, char* result, size_t max_length, cmd_reply_override override) {
+    int ret;
+    
+    ret = mitm_smbus_read_with_override(device, cmd, result, max_length, true, override);
+    if (ret < 0) return ret;
+
+    // search for possible null termination
+    for (int i = 0; i < ret; i++) {
+        if (result[i] == 0x00) return i;
+    }
+
+    return ret;
 }
 

@@ -21,6 +21,7 @@
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
     IN THE SOFTWARE.
  */
+#include "smbus.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -60,3 +61,8 @@ int mitm_generate_reply_crc(uint8_t* buffer, uint8_t crc_index, bool is_block);
 
 void init_mitm();
 void mitm_loop();
+
+
+// like the smbus read functions but applies an override
+int mitm_smbus_read_with_override(i2c_dev_t* device, uint8_t cmd, uint8_t* result, size_t length, bool is_block, cmd_reply_override override);
+int mitm_smbus_read_text_with_override(i2c_dev_t* device, uint8_t cmd, char* result, size_t max_length, cmd_reply_override override);

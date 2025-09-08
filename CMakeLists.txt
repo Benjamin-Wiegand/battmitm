@@ -40,6 +40,7 @@ add_executable(BattMITM_2.0
         smbus.c
         static_queue.c 
         mitm.c 
+        override.c
         status.c 
         display.c 
         font.c 

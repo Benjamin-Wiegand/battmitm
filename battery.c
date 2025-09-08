@@ -24,6 +24,8 @@
 #include "battery.h"
 #include "config.h"
 #include "smbus.h"
+#include "mitm.h"
+#include "override.h"
 #include "hardware/sync.h"
 #include "pico/stdlib.h"
 #include <stdlib.h>
@@ -74,6 +76,57 @@ void battery_stat_request_update(battery_stat_t* batt_stat) {
 }
 
 
+void battery_update_stat(battery_stat_t* batt_stat) {
+    i2c_dev_t* bms = get_bms_dev();
+    cmd_reply_override override = NULL;
+    int ret;
+
+    printf("updating %02x (%s)\n", batt_stat->read_command, batt_stat->friendly_name);
+    
+    if (defused_use_read_command_reply_override(batt_stat->read_command)) {
+        override = get_read_command_reply_override(batt_stat->read_command);
+        if (override != NULL) printf("using read cmd override\n");
+    }
+
+    switch (batt_stat->type) {
+        case SBS_BYTES:
+            if (override != NULL) {
+                ret = mitm_smbus_read_with_override(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length, false, override);                    
+            } else {
+                ret = smbus_read(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
+            }
+            break;
+        case SBS_BLOCK:
+            if (override != NULL) {
+                ret = mitm_smbus_read_with_override(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length, true, override);
+            } else {
+                ret = smbus_read_block(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
+            }
+            break;
+        case SBS_STRING:
+            if (override != NULL) {
+                // ret = mitm_smbus_read_text_with_override(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length, override);
+                ret = mitm_smbus_read_with_override(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length, true, override);
+            } else {
+                ret = smbus_read_text(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
+            }
+            break;
+        default:
+            return;
+    }
+
+    if (ret < 0) {
+        batt_stat->result_valid = false;
+    } else {
+        batt_stat->result_valid = true;
+        batt_stat->result_length = ret;
+        batt_stat->update_requested = false;
+    }
+
+    batt_stat->last_updated = time_us_64();
+}
+
+
 void battery_update_cache() {
     if (!battery_stat_need_cache_update) return;
     
@@ -81,40 +134,14 @@ void battery_update_cache() {
 
     battery_stat_need_cache_update = false;
 
-    i2c_dev_t* bms = get_bms_dev();
     battery_stat_t* batt_stat;
-    int ret;
 
     for (int i = 0; i < battery_stat_cache_size; i++) {
         batt_stat = &battery_stat_cache[i];
         if (!batt_stat->update_requested) continue;
         if (batt_stat->last_updated + BATTERY_STAT_MIN_RETRY_PERIOD > time_us_64()) continue;
 
-        printf("update requested for %02x (%s)\n", batt_stat->read_command, batt_stat->friendly_name);
-
-        switch (batt_stat->type) {
-            case SBS_BYTES:
-                ret = smbus_read(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
-                break;
-            case SBS_BLOCK:
-                ret = smbus_read_block(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
-                break;
-            case SBS_STRING:
-                ret = smbus_read_text(bms, batt_stat->read_command, batt_stat->cached_result.as_uint8, batt_stat->max_result_length);
-                break;
-            default:
-                continue;
-        }
-
-        if (ret < 0) {
-            batt_stat->result_valid = false;
-        } else {
-            batt_stat->result_valid = true;
-            batt_stat->result_length = ret;
-            batt_stat->update_requested = false;
-        }
-        
-        batt_stat->last_updated = time_us_64();
+        battery_update_stat(batt_stat);
     }
 
     battery_stat_unlock();
@@ -180,7 +207,7 @@ void init_battery() {
         create_battery_stat(BATT_CMD_MANUFACTURER_NAME, "manufacturer", 32, SBS_STRING, BATTERY_STAT_VALID_PERIOD_CONSTANT),
         create_battery_stat(BATT_CMD_DEVICE_NAME, "device name", 32, SBS_STRING, BATTERY_STAT_VALID_PERIOD_CONSTANT),
         create_battery_stat(BATT_CMD_DEVICE_CHEMISTRY, "chemistry", 16, SBS_STRING, BATTERY_STAT_VALID_PERIOD_CONSTANT),
-        create_battery_stat(BATT_CMD_MANUFACTURER_DATA, "manufacturer data", 14, SBS_BLOCK, BATTERY_STAT_VALID_PERIOD_CONSTANT),
+        create_battery_stat(BATT_CMD_MANUFACTURER_DATA, "manufacturer data", 14, SBS_BLOCK, BATTERY_STAT_VALID_PERIOD_DEFAULT),
     };
     battery_stat_cache_size = sizeof(battery_stat_cache_init) / sizeof(battery_stat_t);
     battery_stat_cache = malloc(sizeof(battery_stat_cache_init));
