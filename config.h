@@ -63,7 +63,7 @@
 #define DISPLAY_FLIP_180 false
 
 #define DISPLAY_BURN_SHIFT_MIN_INTERVAL 10000000    // microseconds
-#define DISPLAY_INACTIVITY_TIMEOUT 10000000         // microseconds
+#define DISPLAY_INACTIVITY_TIMEOUT 120000000         // microseconds
 #define DISPLAY_CONTRAST 0x69
 #define DISPLAY_CONTRAST_INACTIVE 0x00
 
