@@ -40,7 +40,6 @@ battery_stat_t* stat_page_health_temperature;
 battery_stat_t* stat_page_health_full_capacity;
 battery_stat_t* stat_page_health_design_capacity;
 battery_stat_t* stat_page_health_cycle_count;
-battery_stat_t* stat_page_health_manufacture_date;
 
 struct health_verdict {
     char* text;
@@ -102,13 +101,11 @@ void defused_stat_page_health_info_init() {
     stat_page_health_full_capacity = battery_get_stat(BATT_CMD_FULL_CHARGE_CAPACITY);
     stat_page_health_design_capacity = battery_get_stat(BATT_CMD_DESIGN_CAPACITY);
     stat_page_health_cycle_count = battery_get_stat(BATT_CMD_CYCLE_COUNT);
-    stat_page_health_manufacture_date = battery_get_stat(BATT_CMD_MANUFACTURE_DATE);
 
     battery_stat_request_update(stat_page_health_temperature);
     battery_stat_request_update(stat_page_health_full_capacity);
     battery_stat_request_update(stat_page_health_design_capacity);
     battery_stat_request_update(stat_page_health_cycle_count);
-    battery_stat_request_update(stat_page_health_manufacture_date); //TODO
 
     stat_page_health_capacity_ratio_text = get_g_text_box_inst();
     stat_page_health_wear_label_text = get_g_text_box_inst();
@@ -205,7 +202,6 @@ void defused_stat_page_health_info_update() {
     battery_stat_request_update(stat_page_health_full_capacity);
     battery_stat_request_update(stat_page_health_design_capacity);
     battery_stat_request_update(stat_page_health_cycle_count);
-    battery_stat_request_update(stat_page_health_manufacture_date); //TODO
 
 
     battery_stat_lock();
