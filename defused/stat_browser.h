@@ -23,5 +23,5 @@
  */
 #include "defused/gui.h"
 
-menu_binding_t* bind_stat_browser();
+void bind_stat_browser();
 

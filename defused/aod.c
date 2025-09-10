@@ -184,6 +184,6 @@ menu_binding_t defused_aod_menu_binding = {
     init: &defused_aod_init
 };
 
-menu_binding_t* bind_aod() {
-    return &defused_aod_menu_binding;
+void bind_aod() {
+    defused_bind(&defused_aod_menu_binding);
 }

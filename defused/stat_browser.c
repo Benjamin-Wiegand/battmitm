@@ -74,13 +74,13 @@ bool defused_stat_browser_on_button_event(button_func_t function, button_event_t
 void defused_stat_browser_on_nav_up() {
     if (stat_browser_page_index == 0) return;
     stat_browser_page_index--;
-    defused_bind(bind_stat_browser());  // re-bind
+    bind_stat_browser();    // re-bind
 }
 
 void defused_stat_browser_on_nav_down() {
     if (stat_browser_page_index >= sizeof(stat_browser_page_defs) / sizeof(stat_browser_page_t) - 1) return;
     stat_browser_page_index++;
-    defused_bind(bind_stat_browser());  // re-bind
+    bind_stat_browser();    // re-bind
 }
 
 void defused_stat_browser_on_pre_select() {}
@@ -171,6 +171,6 @@ menu_binding_t defused_stat_browser_menu_binding = {
     init: &defused_stat_browser_init
 };
 
-menu_binding_t* bind_stat_browser() {
-    return &defused_stat_browser_menu_binding;
+void bind_stat_browser() {
+    defused_bind(&defused_stat_browser_menu_binding);
 }

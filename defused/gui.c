@@ -139,7 +139,7 @@ bool defused_enter_inactive_mode() {
     if (defused_inactive_mode) return false;
     defused_inactive_mode = true;
     defused_attenuate_contrast(DISPLAY_CONTRAST_INACTIVE);
-    defused_bind(bind_aod());
+    bind_aod();
     return true;
 }
 
@@ -148,7 +148,7 @@ bool defused_exit_inactive_mode() {
     defused_last_interaction = time_us_64();
     defused_inactive_mode = false;
     defused_attenuate_contrast(DISPLAY_CONTRAST);
-    defused_bind(bind_stat_browser());
+    bind_stat_browser();
     return true;
 }
 
@@ -210,7 +210,7 @@ void init_gui() {
     
     graphics_reset();
     
-    defused_bind(bind_stat_browser());
+    bind_stat_browser();
     
     while (true) defused_loop();
 }

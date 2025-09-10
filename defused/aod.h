@@ -23,5 +23,5 @@
  */
 #include "defused/gui.h"
 
-menu_binding_t* bind_aod();
+void bind_aod();
 
