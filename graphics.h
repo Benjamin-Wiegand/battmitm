@@ -126,6 +126,7 @@ void graphics_add_line(g_line_t* inst);
 
 // utils
 coord_t graphics_calculate_text_width(size_t chars, coord_t scale_factor);
+color_t graphics_calculate_foreground_color(color_t background_color);
 
 // renders everything to the framebuffer
 void graphics_render();

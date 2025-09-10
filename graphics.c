@@ -396,6 +396,12 @@ coord_t graphics_calculate_text_width(size_t chars, coord_t scale_factor) {
     return FONT_WIDTH * chars * scale_factor + (chars - 1) * scale_factor;
 }
 
+color_t graphics_calculate_foreground_color(color_t background_color) {
+    uint color_sum = (background_color >> 11) + ((background_color >> 5) & 0x3F) + (background_color & 0x1F);
+    if (color_sum > 62) return COLOR_BLACK;
+    return COLOR_WHITE;
+}
+
 void graphics_render() {
     g_object_holder_t* holder;
 
