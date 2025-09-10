@@ -108,8 +108,11 @@ coord_t g_text_box_chars_per_line(g_text_box_t* inst) {
     return chars_per_line < 1 ? 1 : chars_per_line; // at least 1 char will be rendered
 }
 
-void graphics_render_text_line_internal(coord_t x, coord_t y, coord_t x_limit, g_text_alignment_mode_t alignment_mode, coord_t scale_factor, color_t color, char* text, size_t length, bool marquee_start, bool marquee_end) {
-    coord_t line_length = FONT_WIDTH * scale_factor * length + scale_factor * (length - 1);
+void graphics_render_text_line_internal(coord_t x, coord_t y, coord_t x_limit, g_text_alignment_mode_t alignment_mode, coord_t scale_factor, color_t color, char* text, size_t length, size_t line_chars, bool marquee_start, bool marquee_end) {
+    if (line_chars == 0) line_chars = length;
+
+    coord_t line_length = FONT_WIDTH * scale_factor * line_chars + scale_factor * (line_chars - 1);
+
     switch (alignment_mode) {
         case TEXT_ALIGN_CENTER:
             x += (x_limit - x + 1 - line_length) / 2;
@@ -133,6 +136,9 @@ void graphics_render_text_line_internal(coord_t x, coord_t y, coord_t x_limit, g
         display_draw_char(x, y, scale_factor, color, text[i]);
         x += FONT_WIDTH * scale_factor + scale_factor;
     }
+
+    // pad out the rest of line_chars
+    x += (FONT_WIDTH * scale_factor + scale_factor) * (line_chars - length);
     
     if (marquee_end) {
         display_draw_char(x, y, scale_factor, color, '>');
@@ -177,7 +183,7 @@ void render_g_text_box(g_text_box_t* inst) {
             // the line fits
             graphics_render_text_line_internal(
                 inst->x1, y, inst->x2, inst->alignment_mode, inst->scale_factor, 
-                inst->color, &inst->text[line_start_i], i - line_start_i, false, false);
+                inst->color, &inst->text[line_start_i], i - line_start_i, 0, false, false);
         } else {
             // the line is truncated
             switch (inst->truncation_mode) {
@@ -186,6 +192,7 @@ void render_g_text_box(g_text_box_t* inst) {
                         inst->x1, y, inst->x2, inst->alignment_mode, inst->scale_factor, 
                         inst->color, &inst->text[line_start_i], 
                         marquee_length,
+                        chars_per_line,
                         marquee_index > 0, 
                         i - line_start_i > chars_per_line);
                     break;
@@ -194,7 +201,7 @@ void render_g_text_box(g_text_box_t* inst) {
                 default:
                     graphics_render_text_line_internal(
                         inst->x1, y, inst->x2, inst->alignment_mode, inst->scale_factor, 
-                        inst->color, &inst->text[line_start_i], chars_per_line, false, false);
+                        inst->color, &inst->text[line_start_i], chars_per_line, chars_per_line, false, false);
                     break;
             }
         }
