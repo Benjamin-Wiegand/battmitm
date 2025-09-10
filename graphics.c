@@ -125,7 +125,7 @@ void graphics_render_text_line_internal(coord_t x, coord_t y, coord_t x_limit, g
     }
     
     if (marquee_start) {
-        display_draw_char(x, y, scale_factor, COLOR_WHITE, '<');
+        display_draw_char(x, y, scale_factor, color, '<');
         x += FONT_WIDTH * scale_factor + scale_factor;        
     }
 
@@ -135,7 +135,7 @@ void graphics_render_text_line_internal(coord_t x, coord_t y, coord_t x_limit, g
     }
     
     if (marquee_end) {
-        display_draw_char(x, y, scale_factor, COLOR_WHITE, '>');
+        display_draw_char(x, y, scale_factor, color, '>');
     }
 }
 
