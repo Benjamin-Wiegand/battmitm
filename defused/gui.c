@@ -23,11 +23,13 @@
  */
 // the gui is codename "defused" because I think it's funny
 #include "defused/gui.h"
-#include "defused/aod.h"
-#include "defused/stat_browser.h"
 #include "display.h"
 #include "config.h"
 #include "graphics.h"
+
+#include "defused/aod.h"
+#include "defused/stat_browser.h"
+#include "defused/main_menu.h"
 
 
 // active menu
@@ -203,12 +205,12 @@ void init_gui() {
     title->alignment_mode = TEXT_ALIGN_CENTER;
     title->y1 = display_area_height() / 2 - g_text_box_height(title) / 2;
     graphics_add_text_box(title);
-
     graphics_render();
-    
+
     sleep_ms(2000);
-    
     graphics_reset();
+    
+    init_main_menu();
     
     bind_stat_browser();
     

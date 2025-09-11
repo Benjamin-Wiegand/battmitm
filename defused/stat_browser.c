@@ -26,18 +26,16 @@
 #include "display.h"
 #include <stdlib.h>
 
+#include "defused/main_menu.h"
+
 #include "defused/stat_page/general_info.h"
 #include "defused/stat_page/health_info.h"
 #include "defused/stat_page/cell_voltage_info.h"
 #include "defused/stat_page/manufacture_info.h"
 
-#include "defused/menu_list.h"
-
 g_text_box_t* stat_browser_page_number_text;
 g_text_box_t* stat_browser_page_title_text;
 g_rectangle_t* stat_browser_bottom_bar;
-
-menu_list_def_t* the_menu_tree = NULL;
 
 struct stat_browser_page {
     char* title;
@@ -89,13 +87,10 @@ void defused_stat_browser_on_nav_down() {
 
 void defused_stat_browser_on_pre_select() {}
 void defused_stat_browser_on_cancel_select() {}
-void defused_stat_browser_on_select() {
-    menu_list_set(the_menu_tree);
-    bind_menu_list();
-}
+void defused_stat_browser_on_select() {}
 
 bool defused_stat_browser_on_select_held() {
-    defused_enter_inactive_mode();
+    bind_main_menu();
     return true;
 }
 
@@ -156,75 +151,6 @@ void defused_stat_browser_init() {
     graphics_add_rectangle(stat_browser_bottom_bar);
     graphics_add_text_box(stat_browser_page_title_text);
     graphics_add_text_box(stat_browser_page_number_text);
-
-
-    if (the_menu_tree == NULL) {
-
-        the_menu_tree = create_menu_list("menu", COLOR_RED, 2, (menu_list_item_t[]) {
-
-            create_menu_list_item_callback("back", &bind_stat_browser),
-            create_menu_list_item_tree("t",
-                create_menu_list("t", COLOR_GREEN, 2, (menu_list_item_t[]) {
-
-                    create_menu_list_item_tree_back("back"),
-                    create_menu_list_item_tree("r",
-                        create_menu_list("tr", COLOR_BLUE, 2, (menu_list_item_t[]) {
-
-                            create_menu_list_item_tree_back("back"),
-                            create_menu_list_item_tree("e",
-                                create_menu_list("tre", COLOR_PURPLE, 2, (menu_list_item_t[]) {
-
-                                    create_menu_list_item_tree_back("back"),
-                                    create_menu_list_item_tree("e",
-                                        create_menu_list("tree", COLOR_GRAY, 2, (menu_list_item_t[]) {
-
-                                            create_menu_list_item_tree_back("back"),
-                                            create_menu_list_item_tree("e",
-                                                create_menu_list("treee", COLOR_ORANGE, 2, (menu_list_item_t[]) {
-                                                    
-                                                    create_menu_list_item_tree_back("back"),
-                                                    create_menu_list_item_tree("e",
-                                                        create_menu_list("treeee", COLOR_YELLOW, 2, (menu_list_item_t[]) {
-                                                            
-                                                            create_menu_list_item_tree_back("back"),
-                                                            create_menu_list_item_tree("!",
-                                                                create_menu_list("treeee!", COLOR_FAINT_RED, 3, (menu_list_item_t[]) {
-
-                                                                    create_menu_list_item_tree_back("back"),
-                                                                    create_menu_list_item_tree("bro menu tree bro its sick",
-                                                                        create_menu_list("you've hit a leaf!", COLOR_FAINT_GREEN, 1, (menu_list_item_t[]) {
-                                                                            
-                                                                            create_menu_list_item_tree_back("back"),
-
-                                                                        })
-                                                                    ),
-                                                                    create_menu_list_item_callback("exit", &bind_stat_browser)
-
-                                                                })
-                                                            )
-
-                                                        })
-                                                    )
-
-                                                })
-                                            )
-                                            
-                                        })
-                                    )
-
-                                })
-                            )
-
-                        })
-                    )
-
-                })
-            ),
-
-        });
-
-    }
-
 
 }
 

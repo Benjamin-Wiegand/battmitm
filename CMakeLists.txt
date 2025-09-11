@@ -51,6 +51,7 @@ add_executable(BattMITM_2.0
         defused/batt_gui_util.c
         defused/aod.c
         defused/menu_list.c
+        defused/main_menu.c
         defused/stat_browser.c
         defused/stat_page/general_info.c
         defused/stat_page/health_info.c
